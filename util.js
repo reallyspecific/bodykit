@@ -81,7 +81,7 @@ export function parseSettings( cwd ) {
 		watch:     values.run || values.watch || null,
 		run:       values.run || null,
 		sourceIn:  path.join( cwd, values.in || 'source' ),
-		destOut:   path.join( cwd, values.out || 'dist' ),
+		destOut:   path.join( cwd, values.out || values.in || 'dist' ),
 		replace:   values.replace || null,
 		rootUrl:   values.url || null,
 		filenames: values.filenames || null,
