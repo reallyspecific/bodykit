@@ -75,7 +75,7 @@ export async function css( sourceIn, destOut ) {
 	return await recurseDirectoryForCompile( {
 		sourceIn,
 		destOut,
-		subfolder: 'css',
+		subfolder: sourceIn === destOut ? '' : 'css',
 		allowedExtensions: [ '.css' ],
 		callback: async ( { fileName, filePath } ) => {
 
@@ -106,7 +106,7 @@ export async function js( sourceIn, destOut ) {
 	return recurseDirectoryForCompile( {
 		sourceIn,
 		destOut,
-		subfolder: 'js',
+		subfolder: sourceIn === destOut ? '' : 'js',
 		allowedExtensions: [ '.js' ],
 		callback: async ( { filePath, outputPath } ) => {
 
