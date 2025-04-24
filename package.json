@@ -7,6 +7,9 @@
   "bin": {
     "bodykit": "./main.js"
   },
+  "scripts": {
+    "test": "node main.js --build=all --in=test-assets/in --out=test-assets/out"
+  },
   "dependencies": {
     "browserslist": "^4.23.0",
     "esbuild": "^0.20.1",
