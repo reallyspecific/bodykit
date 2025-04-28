@@ -22,6 +22,8 @@ const build = ( what ) => {
 
 }
 
+const DONT_WATCH_LIST = [ 'version.php', 'package.json', 'package-lock.json' ];
+
 const watch = ( pathIn, callback ) => {
 
 	console.log( 'Watching for changes in ' + pathIn );
@@ -55,21 +57,31 @@ if ( runSettings.watch ) {
 		process.stdin.setRawMode( true );
 	}
 	watch( runSettings.sourceIn, ( event, changedPath ) => {
-		const relPath = changedPath.split( path.sep );
+		if ( DONT_WATCH_LIST.includes( path.basename( changedPath ) ) ) {
+			return;
+		}
+		const extension = path.extname( changedPath );
+		const basename = path.basename( changedPath, extension );
 		let what = 'all';
-		if ( relPath[0] === 'css' ) {
+		if ( extension === '.map' ) {
+			return;
+		} else if ( basename.endsWith('.min') ) {
+			return;
+		} else if ( extension === '.css' ) {
 			what = 'css';
-		} else if ( relPath[0] === 'js' ) {
+		} else if ( extension === '.js' ) {
 			what = 'js';
 		}
 		build( what ).then( () => {
 			bumpVersion( runSettings.destOut );
 			console.log( `${changedPath} ${event} event, compilation of ${what} files complete` );
-			if ( what === 'js' ) {
-				io.emit( 'reload' );
-			}
-			if ( what === 'css' ) {
-				io.emit( 'refresh css', [ changedPath ] );
+			if ( io ) {
+				if ( what === 'js' ) {
+					io.emit( 'reload' );
+				}
+				if ( what === 'css' ) {
+					io.emit( 'refresh css', [ changedPath ] );
+				}
 			}
 		} ).catch( error => {
 			console.error( `${changedPath} ${event} event, error: ${error}` );
