@@ -56,7 +56,8 @@ if ( runSettings.watch ) {
 	if ( process.stdin.isTTY ) {
 		process.stdin.setRawMode( true );
 	}
-	watch( runSettings.sourceIn, ( event, changedPath ) => {
+
+	const watchDir = ( event, changedPath ) => {
 		if ( DONT_WATCH_LIST.includes( path.basename( changedPath ) ) ) {
 			return;
 		}
@@ -86,7 +87,9 @@ if ( runSettings.watch ) {
 		} ).catch( error => {
 			console.error( `${changedPath} ${event} event, error: ${error}` );
 		} );
-	} );
+	};
+
+	watch( runSettings.sourceIn, watchDir );
 	process.stdin.on( 'keypress', ( str, key ) => {
 		if ( key.name === 'q' ) {
 			if ( server ) {
