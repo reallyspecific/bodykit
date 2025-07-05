@@ -15,10 +15,10 @@ const build = ( what ) => {
 	if ( what === 'css' ) {
 		return compile.css( runSettings.sourceIn, runSettings.destOut, runSettings.targetBrowsers );
 	} else if ( what === 'js' ) {
-		return compile.js( runSettings.sourceIn, runSettings.destOut );
+		return compile.js( runSettings.sourceIn, runSettings.destOut, runSettings.targetBrowsers );
 	}
 
-	return compile.all( runSettings.sourceIn, runSettings.destOut );
+	return compile.all( runSettings.sourceIn, runSettings.destOut, runSettings.targetBrowsers );
 
 }
 
