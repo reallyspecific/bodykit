@@ -103,7 +103,7 @@ export async function css( sourceIn, destOut, targetBrowsers ) {
 
 }
 
-export async function js( sourceIn, destOut ) {
+export async function js( sourceIn, destOut, targetBrowsers ) {
 
 	return recurseDirectoryForCompile( {
 		sourceIn,
