@@ -17,7 +17,7 @@ const build = ( what ) => {
 	} else if ( what === 'js' ) {
 		return compile.js( runSettings.sourceIn, runSettings.destOut, runSettings.targetBrowsers ?? null );
 	} else if ( what === 'fonts' ) {
-		return compile.js( runSettings.sourceIn, runSettings.destOut, runSettings.fontArgs ?? null );
+		return compile.fonts( runSettings.sourceIn, runSettings.destOut, runSettings.fontArgs ?? null );
 	}
 
 	return compile.all( runSettings.sourceIn, runSettings.destOut, runSettings );

@@ -180,4 +180,4 @@ export function all( sourceIn, destOut, { targetBrowsers, fontArgs } ) {
 
 }
 
-export default { css, js, all };
+export default { css, js, fonts, all };
