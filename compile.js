@@ -18,55 +18,64 @@ async function recurseDirectoryForCompile( props ) {
 		return;
 	}
 
-	try {
-
-		if ( fs.existsSync( outputPath ) && sourcePath !== outputPath ) {
-			fs.rmSync( outputPath, { recursive: true } );
-		}
-		if ( ! fs.existsSync( outputPath ) ) {
-			fs.mkdirSync( outputPath, { recursive: true } );
-		}
-
-		for (const file of fs.readdirSync(sourcePath)) {
-
-			if ( [ '.', '_', '~' ].includes( file.substring( 0, 1 ) ) ) {
-				continue;
-			}
-
-			const fileStats = fs.lstatSync( path.join( sourcePath, file ) );
-			if ( fileStats.isDirectory() ) {
-				await recurseDirectoryForCompile( {
-					...props,
-					subfolder: path.join( props.subfolder, file ),
-				} );
-				continue;
-			}
-
-			if ( path.basename( file, path.extname( file ) ).endsWith( '.min' ) ) {
-				continue;
-			}
-
-			if ( props.allowedExtensions && ! props.allowedExtensions.includes( path.extname( file ) ) ) {
-				continue;
-			}
-
-			const compiledFiles = await props.callback( {
-				filePath: path.join( sourcePath, file ),
-				fileName: file,
-				outputPath,
-			} );
-
-			if ( compiledFiles ) {
-				compiledFiles.forEach( compiled => {
-					fs.writeFileSync( path.join( outputPath, compiled.filename ), compiled.contents );
-				} );
-			}
-
-		}
-
-	} catch ( error ) {
-		throw error;
+	if ( fs.existsSync( outputPath ) && sourcePath !== outputPath ) {
+		fs.rmSync( outputPath, { recursive: true } );
 	}
+	if ( ! fs.existsSync( outputPath ) ) {
+		fs.mkdirSync( outputPath, { recursive: true } );
+	}
+
+	for (const file of fs.readdirSync(sourcePath)) {
+
+		if ( [ '.', '_', '~' ].includes( file.substring( 0, 1 ) ) ) {
+			continue;
+		}
+		if ( [ '~' ].includes( file.substring( file.length - 1 ) ) ) {
+			continue;
+		}
+
+		const fileStats = fs.lstatSync( path.join( sourcePath, file ) );
+		if ( fileStats.isDirectory() ) {
+			await recurseDirectoryForCompile( {
+				...props,
+				subfolder: path.join( props.subfolder, file ),
+			} );
+			continue;
+		}
+
+		if ( path.basename( file, path.extname( file ) ).endsWith( '.min' ) ) {
+			continue;
+		}
+
+		if ( props.allowedExtensions && ! props.allowedExtensions.includes( path.extname( file ) ) ) {
+			continue;
+		}
+
+		const compiledFiles = await props.callback( {
+			filePath: path.join( sourcePath, file ),
+			fileName: file,
+			outputPath,
+		} );
+
+		if ( compiledFiles ) {
+			compiledFiles.forEach( compiled => {
+				if ( compiled.error ) {
+
+					switch( compiled.error.type ) {
+						case 'ParserError':
+							console.log( `\x1b[31m${compiled.fileName}: ${compiled.error.message}\r\n    in ${compiled.error.path} (${compiled.error.line}:${compiled.error.column})\x1b[0m` );
+							break;
+						default:
+							console.log( `\x1b[31m${compiled.fileName}: ${JSON.stringify(compiled.error, null,4 ) }\x1b[0m` );
+					}
+					return;
+				}
+				fs.writeFileSync( path.join( outputPath, compiled.filename ), compiled.contents );
+			} );
+		}
+
+	}
+
 
 }
 
@@ -81,22 +90,38 @@ export async function css( sourceIn, destOut, targetBrowsers ) {
 		allowedExtensions: [ '.css' ],
 		callback: async ( { fileName, filePath } ) => {
 
-			const { code, map } = bundle( {
-				filename: filePath,
-				minify: true,
-				sourceMap: true,
-				targets
-			} );
+			try {
+				const results = bundle({
+					filename: filePath,
+					minify: true,
+					sourceMap: true,
+					targets
+				});
 
-			const cssFileName = path.basename( fileName, path.extname( fileName ) ) + '.min.css';
+				const cssFileName = path.basename( fileName, path.extname( fileName ) ) + '.min.css';
 
-			return [ {
-				filename: cssFileName,
-				contents: code,
-			},{
-				filename: cssFileName + '.map',
-				contents: map,
-			} ];
+				return [ {
+					filename: cssFileName,
+					contents: results.code,
+				},{
+					filename: cssFileName + '.map',
+					contents: results.map,
+				} ];
+
+			} catch( error ) {
+				if (error?.data?.ParserError ?? false) {
+					return [{
+						fileName,
+						error: {
+							type: 'ParserError',
+							line: error.loc.line,
+							column: error.loc.column,
+							path: `.${error.fileName.replace( sourceIn, '' )}`,
+							message: error.message
+						}
+					}];
+				}
+			}
 
 		}
 	} );
