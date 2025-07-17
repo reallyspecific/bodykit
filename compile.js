@@ -91,12 +91,38 @@ export async function css( sourceIn, destOut, props ) {
 		callback: async ( { fileName, filePath } ) => {
 
 			try {
+				let mixins = new Map();
 				const results = bundle({
 					filename: filePath,
 					minify: true,
 					sourceMap: true,
 					targets,
-					...props.bundleArgs || []
+					...props.bundleArgs || [],
+					customAtRules: {
+						mixin: {
+							prelude: '<custom-ident>',
+							body: 'style-block'
+						},
+						apply: {
+							prelude: '<custom-ident>'
+						},
+						...props?.bundleArgs?.customAtRules || {}
+					},
+					visitor: {
+						Rule: {
+							custom: {
+								mixin(rule) {
+									mixins.set(rule.prelude.value, rule.body.value);
+									return [];
+								},
+								apply(rule) {
+									return mixins.get(rule.prelude.value);
+								}
+							}
+						},
+						...props?.bundleArgs?.visitor || {}
+					},
+
 				});
 
 				const cssFileName = path.basename( fileName, path.extname( fileName ) ) + '.min.css';
