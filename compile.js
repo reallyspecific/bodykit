@@ -79,9 +79,9 @@ async function recurseDirectoryForCompile( props ) {
 
 }
 
-export async function css( sourceIn, destOut, targetBrowsers ) {
+export async function css( sourceIn, destOut, props ) {
 
-	const targets = browserslistToTargets( browserslist( targetBrowsers || '>= 1%' ) );
+	const targets = browserslistToTargets( browserslist( props.targetBrowsers || '>= 1%' ) );
 
 	return await recurseDirectoryForCompile( {
 		sourceIn,
@@ -95,7 +95,8 @@ export async function css( sourceIn, destOut, targetBrowsers ) {
 					filename: filePath,
 					minify: true,
 					sourceMap: true,
-					targets
+					targets,
+					...props.bundleArgs || []
 				});
 
 				const cssFileName = path.basename( fileName, path.extname( fileName ) ) + '.min.css';
@@ -109,18 +110,18 @@ export async function css( sourceIn, destOut, targetBrowsers ) {
 				} ];
 
 			} catch( error ) {
-				if (error?.data?.ParserError ?? false) {
-					return [{
-						fileName,
-						error: {
-							type: 'ParserError',
-							line: error.loc.line,
-							column: error.loc.column,
-							path: `.${error.fileName.replace( sourceIn, '' )}`,
-							message: error.message
-						}
-					}];
-				}
+
+				return [{
+					fileName,
+					error: {
+						type: error.data.type,
+						line: error.loc.line,
+						column: error.loc.column,
+						path: `.${error.fileName.replace( sourceIn, '' )}`,
+						message: error.message
+					}
+				}];
+
 			}
 
 		}
@@ -128,7 +129,7 @@ export async function css( sourceIn, destOut, targetBrowsers ) {
 
 }
 
-export async function js( sourceIn, destOut, targetBrowsers ) {
+export async function js( sourceIn, destOut, props ) {
 
 	return recurseDirectoryForCompile( {
 		sourceIn,
@@ -145,6 +146,7 @@ export async function js( sourceIn, destOut, targetBrowsers ) {
 				write: false,
 				outdir: outputPath,
 				outExtension: { '.js': '.min.js' },
+				...props?.buildArgs || []
 			} );
 
 			const returnFiles = [];
@@ -163,7 +165,7 @@ export async function js( sourceIn, destOut, targetBrowsers ) {
 
 }
 
-export function fonts( sourceIn, destOut, args ) {
+export function fonts( sourceIn, destOut, props ) {
 
 	return recurseDirectoryForCompile( {
 		sourceIn,
@@ -175,8 +177,8 @@ export function fonts( sourceIn, destOut, args ) {
 			const inputFileBuffer = await fs.promises.readFile( filePath );
 
 			const outputFileBuffer = await subset( inputFileBuffer, {
-				'unicodes': args?.unicodes ?? 'U+0000-007F,U+00A0-00FF',
-				'flavor':   args?.outputType ?? 'woff2',
+				'unicodes': props?.subsetArgs?.unicodes ?? 'U+0000-007F,U+00A0-00FF',
+				'flavor':   props?.subsetArgs?.outputType ?? 'woff2',
 			} );
 
 			return [ {
@@ -191,13 +193,13 @@ export function fonts( sourceIn, destOut, args ) {
 
 }
 
-export function all( sourceIn, destOut, { targetBrowsers, fontArgs } ) {
+export function all( sourceIn, destOut, props ) {
 
 	const promises = [];
 
-	promises.push( css( sourceIn, destOut, targetBrowsers ) );
-	promises.push( js( sourceIn, destOut, targetBrowsers ) );
-	promises.push( fonts( sourceIn, destOut, fontArgs ) );
+	promises.push( css( sourceIn, destOut, props ) );
+	promises.push( js( sourceIn, destOut, props ) );
+	promises.push( fonts( sourceIn, destOut, props ) );
 
 	util.bumpVersion( destOut );
 
