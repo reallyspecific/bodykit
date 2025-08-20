@@ -1,0 +1,137 @@
+import path from "path";
+import {
+	existsSync as fileExists,
+	mkdirSync as mkdir,
+	writeFileSync as writeFile,
+	readdirSync as readDir,
+	rmSync as rm,
+	lstatSync as fileStat,
+} from "fs";
+import {globalSettings} from "./settings.js";
+
+process.on('uncaughtException', function (err) {
+	console.error('Caught exception: ', err);
+});
+
+export class Compiler {
+
+	fileExtension = '';
+	allowedExtensions = [];
+	buildOptions = {};
+	sourceIn = globalSettings.sourceIn;
+	destOut = globalSettings.destOut;
+
+	constructor(props) {
+		const {sourceIn, destOut, buildOptions} = props;
+		sourceIn && (this.sourceIn = sourceIn);
+		destOut && (this.destOut = destOut);
+		this.buildOptions = buildOptions;
+	}
+
+	async build(props) {
+		return false;
+	}
+
+	async compile(props = {}) {
+
+		return Compiler.recurseDirectory({
+			sourceIn: this.sourceIn,
+			destOut: this.destOut,
+			buildOptions: this.buildOptions,
+			allowedExtensions: this.allowedExtensions,
+			buildCallback: this.build,
+			writeCallback: this.write,
+		});
+
+	}
+
+	async write(compiled, outputPath) {
+
+		if ( ! Array.isArray( compiled ) ) {
+			compiled = [compiled];
+		}
+
+		for ( const file of compiled ) {
+
+			if (file.error) {
+				switch (file.error.type) {
+					case 'ParserError':
+					case 'SyntaxError':
+						console.log(`\x1b[31m${file.fileName}: ${file.error.message}\r\n    in ${file.error.path} (${file.error.line}:${file.error.column})\x1b[0m`);
+						break;
+					default:
+						console.log(`\x1b[31m${file.fileName}: ${JSON.stringify(file.error, null, 4)}\x1b[0m`);
+				}
+				return;
+			}
+
+			if (!fileExists(path.dirname(path.join(outputPath,file.filename)))) {
+				mkdir(path.dirname(path.join(outputPath,file.filename)), {recursive: true});
+			}
+
+			writeFile(path.join(outputPath, file.filename), file.contents, 'utf8');
+
+		}
+
+	}
+
+	static async recurseDirectory(props) {
+
+		const sourcePath = path.join(props.sourceIn, props.subfolder ?? '');
+		const outputPath = path.join(props.destOut, props.subfolder ?? '');
+
+		const exists = fileExists(sourcePath);
+		if ( ! exists ) {
+			return [];
+		}
+
+		const files = readDir(sourcePath);
+
+		for (const file of files) {
+
+			if (['.', '~'].includes(file.substring(0, 1))) {
+				continue;
+			}
+			if (['~'].includes(file.substring(file.length - 1))) {
+				continue;
+			}
+
+			const currentPath = path.join(sourcePath, file);
+			const fileStats = fileStat(currentPath);
+			if (fileStats.isDirectory()) {
+				await Compiler.recurseDirectory({
+					...props,
+					destPath: outputPath,
+					subfolder: path.join(props.subfolder ?? '', file),
+				});
+				continue;
+			}
+			if (file.startsWith('_')) {
+				continue;
+			}
+
+			if (path.basename(file, path.extname(file)).endsWith('.min')) {
+				continue;
+			}
+
+			if (props.allowedExtensions && !props.allowedExtensions.includes(path.extname(file))) {
+				continue;
+			}
+
+			const compiledFiles = await props.buildCallback({
+				filePath: path.join(sourcePath, file),
+				fileName: file,
+				outputUrl: path.join(props.subfolder, path.basename(file)),
+				outputPath,
+				buildOptions: props.buildOptions,
+			});
+
+			if (compiledFiles) {
+				compiledFiles.forEach(compiled => props.writeCallback(compiled, outputPath));
+			}
+
+		}
+
+	}
+
+}

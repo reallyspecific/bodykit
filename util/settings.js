@@ -1,5 +1,9 @@
 import path from 'path';
-import fs from 'fs';
+import {
+	readFileSync as readFile,
+	existsSync as fileExists,
+	writeFileSync as writeFile,
+} from 'fs';
 import { parseArgs } from 'node:util';
 
 export const globalSettings = {
@@ -9,9 +13,10 @@ export const globalSettings = {
 	sourceIn:  path.join( process.cwd(), 'source' ),
 	destOut:   path.join( process.cwd(), 'dist' ),
 	replace:   false,
-	rootUrl:   '',
+	rootUrl:   'http://localhost:8080',
 	filenames: false,
-	locale:    'en-US'
+	locale:    'en-US',
+	env:       'production',
 };
 
 export function updateGlobalSetting( key, value ) {
@@ -83,7 +88,7 @@ export function parseSettings( cwd ) {
 		}
 	}
 
-	const packageFile = fs.readFileSync( path.join( process.cwd(), 'package.json' ) );
+	const packageFile = readFile( path.join( process.cwd(), 'package.json' ) );
 	if ( packageFile ) {
 		const packageSettings = JSON.parse( packageFile );
 		if ( packageSettings && ( packageSettings.config?.bodykit ?? false ) ) {
@@ -98,7 +103,7 @@ export function parseSettings( cwd ) {
 		watch:          values.run || values.watch || null,
 		run:            values.run || null,
 		sourceIn:       path.join( cwd, values.in || 'source' ),
-		destOut:        path.join( cwd, values.out || values.in || 'dist' ),
+		destOut:        path.join( cwd, values.out || 'public' ),
 		replace:        values.replace || null,
 		rootUrl:        values.url || null,
 		filenames:      values.filenames || null,
@@ -134,8 +139,8 @@ export function bumpVersion( destOut ) {
 	const versionFile = path.join( destOut, 'version.php' );
 	const versionCode = `<?php\nreturn '1.0.${Date.now()}';\n`;
 
-	if ( fs.existsSync( path.join( destOut, 'package.json' ) ) ) {
-		const packageJson = JSON.parse( fs.readFileSync( path.join( destOut, 'package.json' ) ) );
+	if ( fileExists( path.join( destOut, 'package.json' ) ) ) {
+		const packageJson = JSON.parse( readFile( path.join( destOut, 'package.json' ) ) );
 		if ( packageJson.version ) {
 			const version = packageJson.version.split( '.' );
 			if ( version.length > 2 ) {
@@ -145,14 +150,9 @@ export function bumpVersion( destOut ) {
 			}
 			packageJson.version = version.join( '.' );
 		}
-		fs.writeFileSync( path.join( destOut, 'package.json' ), JSON.stringify( packageJson, null, 2 ) );
+		writeFile( path.join( destOut, 'package.json' ), JSON.stringify( packageJson, null, 2 ) );
 	}
 
-	fs.writeFileSync( versionFile, versionCode );
+	writeFile( versionFile, versionCode );
 
-}
-
-export default {
-	bumpVersion,
-	parseSettings
 }
