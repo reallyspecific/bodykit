@@ -1,8 +1,9 @@
 {
+  "scope": "@reallyspecific",
   "name": "bodykit",
   "version": "1.1.0",
   "main": "main.js",
-  "license": "MIT",
+  "license": "gnu-v3-or-later",
   "type": "module",
   "bin": {
     "bodykit": "./main.js"
