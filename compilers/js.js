@@ -30,10 +30,14 @@ export default class JSCompiler extends Compiler {
 			this.collection.push( {
 				destPath: path.join( this.destOut, relPath, jsFileName ),
 				relPath: path.join( relPath, jsFileName ),
+				filePath: filePath,
 				filename: jsFileName,
 			} );
 
 			returnFiles.push( {
+				destPath: path.join( this.destOut, relPath, jsFileName ),
+				filePath: filePath,
+				relPath: path.join( relPath, jsFileName ),
 				filename: jsFileName,
 				contents: file.contents,
 			} );

@@ -1,6 +1,12 @@
 ( ( settings ) => {
 
-	const socket = io( settings.socketHost );
+	console.log( `Want to connect to ${settings.socketHost}` );
+
+	const socket = io(  );
+
+	socket.on( 'connect', () => {
+		console.log( 'connected to development server' );
+	} );
 
 	socket.on( 'disconnect', () => {
 		console.log( 'received disconnect request' );

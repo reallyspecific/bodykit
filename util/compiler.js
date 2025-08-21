@@ -68,14 +68,16 @@ export class Compiler {
 				return;
 			}
 
-			if (!fileExists(path.dirname(path.join(outputPath,file.filename)))) {
-				mkdir(path.dirname(path.join(outputPath,file.filename)), {recursive: true});
-			}
-
-			if (compiled.copy) {
-				copyFile( path.join( this.sourceIn, file.filename ), path.join(outputPath, file.filename) );
+			if (file.copy) {
+				if (!fileExists(path.dirname(file.destPath))) {
+					mkdir(path.dirname(path.join(file.destPath), {recursive: true}));
+				}
+				copyFile( file.filePath, file.destPath );
 			} else {
-				writeFile(path.join(outputPath, file.filename), file.contents, 'utf8');
+				if (!fileExists(path.dirname(path.join(outputPath,file.filename)))) {
+					mkdir(path.dirname(path.join(outputPath,file.filename)), {recursive: true});
+				}
+				writeFile(path.join(outputPath, file.filename), file.contents, { encoding:'utf8' });
 			}
 
 		}

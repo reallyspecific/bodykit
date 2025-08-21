@@ -36,6 +36,10 @@ export default class MarkdownCompiler extends Compiler {
 			}];
 		}
 
+		if ( node.type === '@asset' ) {
+			return node;
+		}
+
 		const baseName = path.basename( node.path, path.extname( node.path ) );
 		if ( ( this.buildOptions?.useFilenames ?? false ) || baseName === 'index' ) {
 			node.path = path.join( path.dirname( node.path ), baseName ) + '.html';
@@ -138,7 +142,9 @@ export default class MarkdownCompiler extends Compiler {
 				collection.push({
 					type: '@asset',
 					path: relPath,
+					filename: file,
 					filePath: path.join(this.sourceIn, relPath),
+					destPath: path.join(this.destOut, relPath),
 					url: fileUrl,
 					copy: (
 						this.buildOptions?.copyAssets ?? [ '.ico', '.gif', '.jpg', '.jpeg', '.webp', '.png', '.svg' ]

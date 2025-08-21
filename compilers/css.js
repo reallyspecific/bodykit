@@ -80,15 +80,22 @@ export default class CSSCompiler extends Compiler {
 			const relPath = path.relative( this.sourceIn, path.dirname( filePath ) );
 
 			this.collection.push( {
+				filePath: filePath,
 				destPath: path.join( this.destOut, relPath, cssFileName ),
 				relPath: path.join( relPath, cssFileName ),
 				filename: cssFileName,
 			} );
 
 			return [ {
+				destPath: path.join( this.destOut, relPath, cssFileName ),
+				filePath: filePath,
+				relPath: path.join( relPath, cssFileName ),
 				filename: cssFileName,
 				contents: results.code,
 			},{
+				filePath: filePath,
+				destPath: path.join( this.destOut, relPath, cssFileName ) + '.map',
+				relPath: path.join( relPath, cssFileName ) + '.map',
 				filename: cssFileName + '.map',
 				contents: results.map,
 			} ];

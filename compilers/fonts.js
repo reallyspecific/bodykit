@@ -36,9 +36,13 @@ export default class FontCompiler extends Compiler {
 			this.collection.push( {
 				destPath: path.join( this.destOut, relPath, fontFileName ),
 				relPath: path.join( relPath, fontFileName ),
+				filePath: filePath,
 				filename: fontFileName,
 			} );
 			return [{
+				destPath: path.join( this.destOut, relPath, fontFileName ),
+				filePath: filePath,
+				relPath: path.join( relPath, fontFileName ),
 				filename: fontFileName,
 				contents: outputFileBuffer
 			}];
