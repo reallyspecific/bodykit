@@ -1,6 +1,6 @@
 ( ( settings ) => {
 
-	const socket = io( `http://localhost:${settings.socket || 3001}` );
+	const socket = io( settings.socketHost );
 
 	socket.on( 'disconnect', () => {
 		console.log( 'received disconnect request' );
@@ -12,15 +12,13 @@
 		window.location.reload();
 	} );
 
-	socket.on( 'refresh css', changedFiles => {
-		console.log( 'received css refresh request' );
+	socket.on( 'refresh', changedFiles => {
+		console.log( 'received refresh request' );
 		const styles = document.querySelectorAll( 'link[rel="stylesheet"]' );
 		styles.forEach( link => {
-			changedFiles.forEach( file => {
-				if ( link.href.includes( file ) ) {
-					link.href = link.href + '?v=' + Date.now();
-				}
-			} );
+			const URL = new URL( link.href );
+			URL.searchParams.set('v', Date.now());
+			link.href = URL.toString();
 		} );
 	} );
 

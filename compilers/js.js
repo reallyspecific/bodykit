@@ -23,8 +23,18 @@ export default class JSCompiler extends Compiler {
 		const returnFiles = [];
 
 		build.outputFiles.forEach( file => {
+			const jsFileName = path.basename( file.path );
+
+			const relPath = path.relative( this.sourceIn, path.dirname( filePath ) );
+
+			this.collection.push( {
+				destPath: path.join( this.destOut, relPath, jsFileName ),
+				relPath: path.join( relPath, jsFileName ),
+				filename: jsFileName,
+			} );
+
 			returnFiles.push( {
-				filename: path.basename( file.path ),
+				filename: jsFileName,
 				contents: file.contents,
 			} );
 		} );

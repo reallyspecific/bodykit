@@ -16,6 +16,13 @@ export default class MarkdownCompiler extends Compiler {
 	fileExtension = 'html';
 	allowedExtensions = [ '.md' ];
 
+	constructor( props ) {
+		super( props );
+		this.collection = [];
+		this.assetVersion = props.assetVersion ?? null;
+		this.compilers = props.compilers;
+	}
+
 	async build( { filePath } ) {
 
 		const node = this.collection.find( node => node.filePath === filePath );
@@ -42,14 +49,14 @@ export default class MarkdownCompiler extends Compiler {
 	}
 
 	async write( compiled, outputPath ) {
-		if ( compiled.type === '@asset' ) {
+		if ( compiled.type === '@asset' && compiled.copy === false ) {
 			return;
 		}
-		if ( ! compiled.error && ! Array.isArray( compiled ) ) {
+		if ( ! compiled.error && compiled.type !== '@asset' && ! Array.isArray( compiled ) ) {
 			try {
 				const template = await Template.new(compiled.type || 'page');
 				compiled.collection = this.collection;
-				compiled.contents = await template.render(compiled);
+				compiled.contents = await template.render( compiled, this );
 				compiled = {
 					filename: compiled.path,
 					contents: compiled.contents,
@@ -67,7 +74,7 @@ export default class MarkdownCompiler extends Compiler {
 		await super.write( compiled, outputPath );
 	}
 
-	async compile( props ) {
+	async compile( props= {} ) {
 		try {
 			this.collection = await this.collect('./');
 		} catch( error ) {
@@ -133,6 +140,10 @@ export default class MarkdownCompiler extends Compiler {
 					path: relPath,
 					filePath: path.join(this.sourceIn, relPath),
 					url: fileUrl,
+					copy: (
+						this.buildOptions?.copyAssets ?? [ '.ico', '.gif', '.jpg', '.jpeg', '.webp', '.png', '.svg' ]
+				 	).includes( path.extname(file) ),
+					version: this.assetVersion ?? fileProps.mtime,
 				});
 			}
 

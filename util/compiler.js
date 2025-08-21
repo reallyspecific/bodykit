@@ -5,6 +5,7 @@ import {
 	writeFileSync as writeFile,
 	readdirSync as readDir,
 	rmSync as rm,
+	copyFileSync as copyFile,
 	lstatSync as fileStat,
 } from "fs";
 import {globalSettings} from "./settings.js";
@@ -20,12 +21,14 @@ export class Compiler {
 	buildOptions = {};
 	sourceIn = globalSettings.sourceIn;
 	destOut = globalSettings.destOut;
+	collection = [];
 
 	constructor(props) {
 		const {sourceIn, destOut, buildOptions} = props;
 		sourceIn && (this.sourceIn = sourceIn);
 		destOut && (this.destOut = destOut);
 		this.buildOptions = buildOptions;
+		this.collection = [];
 	}
 
 	async build(props) {
@@ -39,8 +42,8 @@ export class Compiler {
 			destOut: this.destOut,
 			buildOptions: this.buildOptions,
 			allowedExtensions: this.allowedExtensions,
-			buildCallback: this.build,
-			writeCallback: this.write,
+			buildCallback: this.build.bind(this),
+			writeCallback: this.write.bind(this),
 		});
 
 	}
@@ -69,7 +72,11 @@ export class Compiler {
 				mkdir(path.dirname(path.join(outputPath,file.filename)), {recursive: true});
 			}
 
-			writeFile(path.join(outputPath, file.filename), file.contents, 'utf8');
+			if (compiled.copy) {
+				copyFile( path.join( this.sourceIn, file.filename ), path.join(outputPath, file.filename) );
+			} else {
+				writeFile(path.join(outputPath, file.filename), file.contents, 'utf8');
+			}
 
 		}
 

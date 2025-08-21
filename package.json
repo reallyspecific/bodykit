@@ -1,6 +1,6 @@
 {
   "name": "@reallyspecific/bodykit",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "main": "main.js",
   "license": "GPL-3.0-or-later",
   "type": "module",
@@ -9,7 +9,8 @@
   },
   "scripts": {
     "test:build": "node main.js --build=all --in=test-assets/in --out=test-assets/out",
-    "test:watch": "node main.js --watch --in=test-assets/in"
+    "test:watch": "node main.js --watch --in=test-assets/in",
+    "test:server": "node main.js --watch --serve=test-assets/out --in=test-assets/in --out=test-assets/out"
   },
   "dependencies": {
     "@node-minify/core": "^9.0.2",

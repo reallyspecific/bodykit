@@ -81,6 +81,14 @@ Common flags:
 - --watch  
   Start file watching and incremental rebuilds.
 
+- --serve=<path>
+  Startup a local webserver with <path> as the server root. Must
+  be used with watch for now, and page will soft/hard reload when
+  assets are recompiled.
+
+  Defaults to `https://localhost:8080`, this can be changed using 
+  the `--host` and `--port` parameters
+
 - --help  
   Print the CLI help with the full list of supported flags for your installed version.
 
@@ -91,12 +99,10 @@ Examples:
 bodykit --build=all --in=src --out=dist
 ```
 
-
 - Watch only a specific input folder:
 ```shell script
 bodykit --watch --in=src/site
 ```
-
 
 ## What Bodykit handles
 

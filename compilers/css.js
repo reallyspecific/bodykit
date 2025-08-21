@@ -77,6 +77,14 @@ export default class CSSCompiler extends Compiler {
 
 			const cssFileName = path.basename( fileName, path.extname( fileName ) ) + '.min.css';
 
+			const relPath = path.relative( this.sourceIn, path.dirname( filePath ) );
+
+			this.collection.push( {
+				destPath: path.join( this.destOut, relPath, cssFileName ),
+				relPath: path.join( relPath, cssFileName ),
+				filename: cssFileName,
+			} );
+
 			return [ {
 				filename: cssFileName,
 				contents: results.code,

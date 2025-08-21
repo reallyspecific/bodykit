@@ -56,7 +56,7 @@ export function makeExcerpt(content) {
 export function parseVars( stringTemplate, node, args = {} ) {
 
 	let replacement = stringTemplate + '';
-	for( const match of stringTemplate.matchAll( /\$([a-z]*)(:([a-z]*))?/g ) ) {
+	for( const match of stringTemplate.matchAll( /\$([a-z]*)?/g ) ) {
 		let value = null;
 		switch ( match[1] ) {
 			case 'now':
@@ -69,17 +69,11 @@ export function parseVars( stringTemplate, node, args = {} ) {
 		if ( value === null ) {
 			continue;
 		}
-		if ( match[2] ) {
-			switch( match[2] ) {
-				case 'year':
-					value = value.getFullYear();
-					break;
-				case 'longdate':
-					value = new Date( value ).toLocaleDateString( globalSettings.locale, { year: 'numeric', month: 'long', day: 'numeric' } );
-					break;
-				default:
-					break;
-			}
+		if ( args._.includes('year') ) {
+			value = value.getFullYear();
+		}
+		if ( args._.includes('longdate') ) {
+			value = new Date( value ).toLocaleDateString( globalSettings.locale, { year: 'numeric', month: 'long', day: 'numeric' } );
 		}
 		replacement = replacement.replace( match[0], value );
 	}
