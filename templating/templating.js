@@ -96,10 +96,6 @@ export default class Template {
 
 		}
 
-		markdownit({html:true}).render( renderedContents );
-
-		// minify here probably
-
 		return renderedContents;
 
 	}

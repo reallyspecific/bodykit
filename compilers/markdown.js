@@ -10,6 +10,9 @@ import {globalSettings} from "../util/settings.js";
 import Template from "../templating/templating.js";
 import {URL} from "url";
 import {Compiler} from "../util/compiler.js";
+import minify from "@node-minify/core";
+import htmlMinify from "@node-minify/html-minifier";
+import markdownit from "markdown-it";
 
 export default class MarkdownCompiler extends Compiler {
 
@@ -48,6 +51,8 @@ export default class MarkdownCompiler extends Compiler {
 		}
 		node.url.pathname = node.path;
 
+		node.sourceContents = markdownit({html:true}).render( node.sourceContents );
+
 		return node;
 
 	}
@@ -61,7 +66,6 @@ export default class MarkdownCompiler extends Compiler {
 				const template = await Template.new(compiled.type || 'page');
 				compiled.collection = this.collection;
 				compiled.contents = await template.render( compiled, this );
-				// todo: minify html here
 				compiled = {
 					filename: compiled.path,
 					contents: compiled.contents,
@@ -76,7 +80,15 @@ export default class MarkdownCompiler extends Compiler {
 			}
 		}
 
-		await super.write( compiled, outputPath );
+		await super.write( { ...compiled }, outputPath );
+
+		if ( compiled.type !== '@asset' && ! compiled.copy ) {
+			await minify({
+				compressor: htmlMinify,
+				input: path.join( outputPath, compiled.filename ),
+				output: path.join( outputPath, compiled.filename ),
+			});
+		}
 	}
 
 	async compile( props= {} ) {
