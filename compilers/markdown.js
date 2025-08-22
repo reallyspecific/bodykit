@@ -61,6 +61,7 @@ export default class MarkdownCompiler extends Compiler {
 				const template = await Template.new(compiled.type || 'page');
 				compiled.collection = this.collection;
 				compiled.contents = await template.render( compiled, this );
+				// todo: minify html here
 				compiled = {
 					filename: compiled.path,
 					contents: compiled.contents,
