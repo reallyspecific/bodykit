@@ -134,7 +134,15 @@ export function parseVars( stringTemplate, node, args = {} ) {
 
 export function buildHTMLTag( tagName, attrs, innerText = null ) {
 
-	let replacement = `<${tagName}${attrs.join('')}>`;
+	if ( typeof attrs === 'object' && ! Array.isArray( attrs ) ) {
+		const keys = Object.keys(attrs).filter( key => attrs[key] !== null );
+		attrs = keys.map( key => `${key}="${attrs[key]}"` );
+	}
+
+	let tagAttrs = attrs.length > 0 ? ' ' + attrs.join(' ') : '';
+
+
+	let replacement = `<${tagName}${tagAttrs}>`;
 	if ( typeof innerText === 'string' ) {
 		replacement += innerText + `</${tagName}>`;
 	}
