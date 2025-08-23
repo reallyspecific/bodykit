@@ -2,7 +2,7 @@ import Template from "../templating.js";
 import { makeSlug } from "../../util/formatting.js";
 import markdownit from "markdown-it";
 
-export default async function ( node, tag ) {
+export default async function ( node, tag, compiler ) {
 
 	if ( tag.attrs.template ) {
 		const type = tag.attrs.template;
@@ -11,13 +11,13 @@ export default async function ( node, tag ) {
 			throw SyntaxError( `Could not find template: ${type} at: ${tag.file}:${tag.index}` );
 		}
 		const templater = new Template( { templateContents: template.contents, type } );
-		return await templater.render(node);
+		return await templater.render(node,compiler);
 
 	}
 
 	const responseTemplate = new Template( { templateContents: node.sourceContents, type: 'content' } );
 
-	const contents = await responseTemplate.render(node);
+	const contents = await responseTemplate.render(node,compiler);
 
 	return markdownit({html:true}).render( contents );
 
