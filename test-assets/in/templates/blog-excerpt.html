@@ -1,7 +1,7 @@
-<!--% TAG blockquote --attr[class]="blog is-style-excerpt" --attr[cite]=$url -->
-	<h2 class="blog-title"><!--% ECHO $title --></h2>
-	<p class="blog-contents"><!--% ECHO $excerpt --></p>
+<blockquote class="blog is-style-excerpt" cite="@@node:url">
+	<h2 class="blog-title">@@meta:title</h2>
+	<p class="blog-contents">@@meta:excerpt</p>
 	<footer class="article-meta">
-		<p><!--% LINK --label="Read more" --></p>
+		<p><a href="@@node:url">Read More</a></p>
 	</footer>
-<!--% TAG /blockquote -->
+</blockquote>

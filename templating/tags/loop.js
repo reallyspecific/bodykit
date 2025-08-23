@@ -1,21 +1,22 @@
 import Template from "../templating.js";
 
-export default async function ( node, args ) {
+export default async function ( node, tag ) {
 
-	if ( ! args.template || ! args.type ) {
-		return false;
+	if ( ! tag.attrs.template || ! tag.attrs.type ) {
+		throw SyntaxError( `Loop tag requires a "template" and "type" attribute` );
 	}
 
 	const filteredContent = Template.search( node.collection, {
-		type:  args.type,
-		sort:  args.sort || 'timestamp',
-		order: args.order || 'desc',
-		limit: 10
+		type:  tag.attrs.type,
+		sort:  tag.attrs.sort || 'timestamp',
+		order: tag.attrs.order || 'desc',
+		limit: tag.attrs.limit || 10,
+		page:  tag.attrs.page || 1,
 	} );
 
-	const template = await Template.new( args.template, false );
+	const template = await Template.new( tag.attrs.template, false );
 	if ( ! template ) {
-		return false;
+		throw SyntaxError( `Could not find template: ${tag.attrs.template} at: ${tag.file}:${tag.index}` );
 	}
 
 	let compiled = '';

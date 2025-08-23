@@ -1,12 +1,11 @@
 <!doctype html>
 <html lang="en-US" class="root">
 <head>
-	<!--% TEMPLATE head/global -->
-	<!--% CSS default optional -->
+{@template name="head-global" /}
+{@asset type="css" name="default" optional="true" /}
 </head>
 <body class="body is-template-default" id="body">
-	<!--% CONTENT --template=page/body -->
-
-	<!--% JS test -->
+{@content template="page/body" /}
+{@asset type="js" name="test" optional="true" /}
 </body>
 </html>
