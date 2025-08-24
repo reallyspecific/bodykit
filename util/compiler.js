@@ -37,7 +37,7 @@ export class Compiler {
 
 	async compile(props = {}) {
 
-		return Compiler.recurseDirectory({
+		return this.recurseDirectory({
 			sourceIn: this.sourceIn,
 			destOut: this.destOut,
 			buildOptions: this.buildOptions,
@@ -84,7 +84,7 @@ export class Compiler {
 
 	}
 
-	static async recurseDirectory(props) {
+	async recurseDirectory(props) {
 
 		const sourcePath = path.join(props.sourceIn, props.subfolder ?? '');
 		const outputPath = path.join(props.destOut, props.subfolder ?? '');
@@ -108,7 +108,7 @@ export class Compiler {
 			const currentPath = path.join(sourcePath, file);
 			const fileStats = fileStat(currentPath);
 			if (fileStats.isDirectory()) {
-				await Compiler.recurseDirectory({
+				await this.recurseDirectory({
 					...props,
 					destPath: outputPath,
 					subfolder: path.join(props.subfolder ?? '', file),
