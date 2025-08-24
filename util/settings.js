@@ -22,6 +22,7 @@ export const globalSettings = {
 	filenames: false,
 	locale:    'en-US',
 	env:       'production',
+	phpVersion: false,
 };
 
 export function updateGlobalSetting( key, value ) {
@@ -83,6 +84,9 @@ export function parseSettings( cwd ) {
 			debug: {
 				type:  'boolean',
 				short: 'd'
+			},
+			versioning: {
+				type:  'boolean',
 			}
 		},
 		tokens: true
@@ -124,6 +128,7 @@ export function parseSettings( cwd ) {
 		jsOptions:      values.js || [],
 		fontOptions:    values.font || [],
 		mode:           values.debug ? 'debug' : 'production',
+		phpVersion:     !! values.versioning,
 	};
 
 	for ( const key in newSettings ) {

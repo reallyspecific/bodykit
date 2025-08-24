@@ -124,7 +124,9 @@ if ( runSettings.watch ) {
 
 		try {
 			await build(what);
-			//bumpVersion(runSettings.destOut);
+			if ( runSettings.phpVersion ) {
+				bumpVersion(runSettings.destOut);
+			}
 			console.log(`${changedPath} ${event} event, compilation of ${what} files complete`);
 
 			if (server) {
