@@ -19,7 +19,7 @@ const build = async ( what ) => {
 	const version = Date.now().toString(36);
 
 	if ( what === 'all') {
-		if ( fileExists( runSettings.destOut) ) {
+		if ( fileExists( runSettings.destOut) && runSettings.replace ) {
 			rm(runSettings.destOut, {recursive: true,});
 		}
 	}

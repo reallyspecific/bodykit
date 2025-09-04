@@ -11,10 +11,6 @@ import {
 import { Minimatch } from "minimatch";
 import {globalSettings} from "./settings.js";
 
-process.on('uncaughtException', function (err) {
-	console.error('Caught exception: ', err);
-});
-
 export class Compiler {
 
 	fileExtension = '';
@@ -39,6 +35,10 @@ export class Compiler {
 			}
 			delete this.buildOptions.exclude;
 		}
+		this.minimatched = [];
+		this.excludedFolders.forEach( match => {
+			this.minimatched.push( new Minimatch(match) );
+		} );
 	}
 
 	async build(props) {
@@ -107,11 +107,6 @@ export class Compiler {
 
 		const files = readDir(sourcePath);
 
-		const minimatched = [];
-		this.excludedFolders.forEach( match => {
-			minimatched.push( new Minimatch(match) );
-		} );
-
 		for (const file of files) {
 
 			if (['.', '~'].includes(file.substring(0, 1))) {
@@ -121,14 +116,7 @@ export class Compiler {
 				continue;
 			}
 			let relFile = path.join(relPath, file);
-			let fail = false;
-			for( const minimatch of minimatched ) {
-				if (minimatch.match(relFile)) {
-					fail = true;
-					break;
-				}
-			}
-			if ( fail ) {
+			if ( this.matchExcludedPath( relFile ) ) {
 				continue;
 			}
 
@@ -145,29 +133,46 @@ export class Compiler {
 			if (file.startsWith('_')) {
 				continue;
 			}
-
 			if (path.basename(file, path.extname(file)).endsWith('.min')) {
 				continue;
 			}
-
 			if (props.allowedExtensions && !props.allowedExtensions.includes(path.extname(file))) {
 				continue;
 			}
-
-			const compiledFiles = await props.buildCallback({
-				filePath: path.join(sourcePath, file),
-				fileName: file,
-				outputUrl: path.join(props.subfolder ?? '', path.basename(file)),
-				outputPath,
-				buildOptions: props.buildOptions,
-			});
-
-			if (compiledFiles) {
-				compiledFiles.forEach(compiled => props.writeCallback(compiled, outputPath));
+			if ( this.matchExcludedPath( relFile ) ) {
+				continue;
 			}
+
+			try {
+				const compiledFiles = await props.buildCallback({
+					filePath: path.join(sourcePath, file),
+					fileName: file,
+					outputUrl: path.join(props.subfolder ?? '', path.basename(file)),
+					outputPath,
+					buildOptions: props.buildOptions,
+				});
+				if (compiledFiles) {
+					compiledFiles.forEach(compiled => props.writeCallback(compiled, outputPath));
+				}
+			} catch( error ) {
+				// todo: do something with this
+				throw error;
+			}
+
+
 
 		}
 
+	}
+
+	matchExcludedPath( matchPath ) {
+		let fail = false;
+		for( const minimatch of this.minimatched ) {
+			if ( minimatch.match( matchPath ) ) {
+				return true;
+			}
+		}
+		return false
 	}
 
 }
