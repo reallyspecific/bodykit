@@ -8,6 +8,7 @@ import {
 	copyFileSync as copyFile,
 	lstatSync as fileStat,
 } from "fs";
+import { Minimatch } from "minimatch";
 import {globalSettings} from "./settings.js";
 
 process.on('uncaughtException', function (err) {
@@ -29,6 +30,15 @@ export class Compiler {
 		destOut && (this.destOut = destOut);
 		this.buildOptions = buildOptions;
 		this.collection = [];
+		this.excludedFolders = globalSettings?.exclude ?? [];
+		if ( buildOptions?.exclude ?? null ) {
+			if ( typeof buildOptions.exclude === 'string' ) {
+				this.excludedFolders.push( buildOptions.exclude );
+			} else if ( Array.isArray( buildOptions.exclude ) ) {
+				this.excludedFolders = this.excludedFolders.concat( buildOptions.exclude );
+			}
+			delete this.buildOptions.exclude;
+		}
 	}
 
 	async build(props) {
@@ -86,8 +96,9 @@ export class Compiler {
 
 	async recurseDirectory(props) {
 
-		const sourcePath = path.join(props.sourceIn, props.subfolder ?? '');
-		const outputPath = path.join(props.destOut, props.subfolder ?? '');
+		const relPath    = props.subfolder ?? ''
+		const sourcePath = path.join(props.sourceIn, relPath);
+		const outputPath = path.join(props.destOut, relPath);
 
 		const exists = fileExists(sourcePath);
 		if ( ! exists ) {
@@ -95,6 +106,11 @@ export class Compiler {
 		}
 
 		const files = readDir(sourcePath);
+
+		const minimatched = [];
+		this.excludedFolders.forEach( match => {
+			minimatched.push( new Minimatch(match) );
+		} );
 
 		for (const file of files) {
 
@@ -104,6 +120,17 @@ export class Compiler {
 			if (['~'].includes(file.substring(file.length - 1))) {
 				continue;
 			}
+			let relFile = path.join(relPath, file);
+			let fail = false;
+			for( const minimatch of minimatched ) {
+				if (minimatch.match(relFile)) {
+					fail = true;
+					break;
+				}
+			}
+			if ( fail ) {
+				continue;
+			}
 
 			const currentPath = path.join(sourcePath, file);
 			const fileStats = fileStat(currentPath);
@@ -111,7 +138,7 @@ export class Compiler {
 				await this.recurseDirectory({
 					...props,
 					destPath: outputPath,
-					subfolder: path.join(props.subfolder ?? '', file),
+					subfolder: path.join(relPath, file),
 				});
 				continue;
 			}
@@ -130,7 +157,7 @@ export class Compiler {
 			const compiledFiles = await props.buildCallback({
 				filePath: path.join(sourcePath, file),
 				fileName: file,
-				outputUrl: path.join(props.subfolder, path.basename(file)),
+				outputUrl: path.join(props.subfolder ?? '', path.basename(file)),
 				outputPath,
 				buildOptions: props.buildOptions,
 			});

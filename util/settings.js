@@ -13,6 +13,7 @@ export const globalSettings = {
 	cwd:       process.cwd(),
 	sourceIn:  path.join( process.cwd(), 'source' ),
 	destOut:   path.join( process.cwd(), 'dist' ),
+	exclude:   [],
 	host:      'localhost',
 	port:      8080,
 	socket:    8081,
@@ -23,6 +24,7 @@ export const globalSettings = {
 	locale:    'en-US',
 	env:       'production',
 	phpVersion: false,
+
 };
 
 export function updateGlobalSetting( key, value ) {
@@ -87,6 +89,9 @@ export function parseSettings( cwd ) {
 			},
 			versioning: {
 				type:  'boolean',
+			},
+			exclude: {
+				type: 'string'
 			}
 		},
 		tokens: true
@@ -116,6 +121,7 @@ export function parseSettings( cwd ) {
 		run:            values.run || null,
 		sourceIn:       path.join( cwd, values.in || 'source' ),
 		destOut:        path.join( cwd, values.out || 'public' ),
+		exclude:        values.exclude ?? [],
 		replace:        values.replace || null,
 		rootUrl:        values.url || null,
 		filenames:      values.filenames || null,
@@ -130,6 +136,9 @@ export function parseSettings( cwd ) {
 		mode:           values.debug ? 'debug' : 'production',
 		phpVersion:     !! values.versioning,
 	};
+	if ( typeof newSettings.exclude === 'string' ) {
+		newSettings.exclude = [ newSettings.exclude ];
+	}
 
 	for ( const key in newSettings ) {
 		if ( newSettings[key] !== null ) {
