@@ -1,6 +1,6 @@
 import {getVar} from "../../util/formatting.js";
 
-export default async function ( node, tag ) {
+export default async function ( tag, node ) {
 
 	let type = 'global';
 	let name = tag.attrs.global ?? null;

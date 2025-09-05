@@ -1,180 +1,88 @@
 import path from "path";
 import {
-	readdirSync as readDir,
 	lstatSync as fileStat,
 	readFileSync as readFile
 } from "fs";
 
 import {makeExcerpt, makeSlug, makeTitleFromSlug} from "../util/formatting.js";
-import {globalSettings} from "../util/settings.js";
 import Template from "../templating/templating.js";
-import {URL} from "url";
-import {Compiler} from "../util/compiler.js";
-import minify from "@node-minify/core";
-import htmlMinify from "@node-minify/html-minifier";
-import markdownit from "markdown-it";
+import Compiler from "../util/compiler.js";
+import {Minimatch} from "minimatch";
 
 export default class MarkdownCompiler extends Compiler {
 
-	fileExtension = 'html';
-	allowedExtensions = [ '.md' ];
+	static type = 'md';
+	copy = [ '*.ico', '*.gif', '*.jpg', '*.jpeg', '*.webp', '*.png', '*.svg' ];
+	useFilenames = false;
 
-	constructor( props ) {
-		super( props );
-		this.collection = [];
-		this.assetVersion = props.assetVersion ?? null;
-		this.compilers = props.compilers;
-	}
-
-	async build( { filePath } ) {
-
-		const node = this.collection.find( node => node.filePath === filePath );
-		if ( ! node ) {
-			return [{
-				filePath,
-				error: {
-					type: 'NotFoundError',
-					message: 'Could not find file',
-				}
-			}];
-		}
-
-		if ( node.type === '@asset' ) {
-			return node;
-		}
-
-		const baseName = path.basename( node.path, path.extname( node.path ) );
-		if ( ( this.buildOptions?.useFilenames ?? false ) || baseName === 'index' ) {
-			node.path = path.join( path.dirname( node.path ), baseName ) + '.html';
+	filename = ( path, basename ) => {
+		if ( this.useFilenames || basename === 'index' ) {
+			return '[path]/[name].html';
 		} else {
-			node.path = path.join( path.dirname( node.path ), baseName, 'index.html' );
-		}
-		node.url.pathname = node.path;
-
-		return node;
-
-	}
-
-	async write( compiled, outputPath ) {
-		if ( compiled.type === '@asset' && compiled.copy === false ) {
-			return;
-		}
-		if ( ! compiled.error && compiled.type !== '@asset' && ! Array.isArray( compiled ) ) {
-			try {
-				const template = await Template.new(compiled.type || 'page');
-				compiled.collection = this.collection;
-				compiled.contents = await template.render( compiled, this );
-				//compiled.contents = markdownit({html:true}).render( compiled.contents );
-				compiled = {
-					filename: compiled.path,
-					contents: compiled.contents,
-				};
-			} catch( error ) {
-				compiled.error = {
-					type: 'TemplateError',
-					message: error.message,
-					stack: error.stack,
-				}
-			}
-		}
-
-		await super.write( { ...compiled }, outputPath );
-
-		/*if ( compiled.type !== '@asset' && ! compiled.copy ) {
-			await minify({
-				compressor: htmlMinify,
-				input: path.join( outputPath, compiled.filename ),
-				output: path.join( outputPath, compiled.filename ),
-			});
-		}*/
-	}
-
-	async compile( props= {} ) {
-		try {
-			this.collection = await this.collect('./');
-		} catch( error ) {
-			await this.write( {
-				fileName: 'content',
-				error: {
-					type: error.name,
-					message: error.message,
-					stack: error.stack,
-				}
-			} );
-			return;
-		}
-		for ( const node of this.collection ) {
-			const fileNode = await this.build( {
-				filePath: path.join( this.sourceIn, node.path ),
-				collection: this.collection
-			} );
-			await this.write( fileNode, path.join( props?.destOut ?? this.destOut, props?.subfolder ?? '' ) );
+			return '[path]/[name]/index.html';
 		}
 	}
 
-	async collect( relDir = './' ) {
+	constructor( buildOptions, props ) {
+		super( buildOptions, props );
+		this.copy.forEach( pattern => {
+			pattern = new Minimatch( pattern );
+		} );
+	}
 
-		let collection = [];
 
-		const files = readDir( path.join( this.sourceIn, relDir ) );
+	async compile( props = {} ) {
+		const collected = this.recurseDirectory( {
+			in: this.sourceIn,
+			build: this.build.bind(this),
+		} );
+		collected.forEach( writeable => {
+			this.write( writeable );
+		} );
+		return this.collection;
+	}
 
-		for ( const file of files ) {
+	async build( props ) {
 
-			const basename = path.basename(file);
-			if ( basename.startsWith('.') || basename.startsWith('_') || basename.startsWith('~') ) {
+		const node = await MarkdownCompiler.parseFile( props.in );
+		const built = {
+			...props,
+			contents: node,
+		}
+
+		this.collection.push( built );
+
+		return [ built ];
+
+	}
+
+
+	async write( compiled ) {
+		const toWrite = [];
+		for ( const props in compiled ) {
+			if (props.error) {
+				toWrite.push(props);
 				continue;
 			}
-
-			const relPath = path.join(relDir, file);
-
-			if ( this.matchExcludedPath( path.join( relDir, file ) ) ) {
+			if (props.ext !== '.md' && this.match(compiled.filename, this.copy)) {
+				toWrite.push({...props, copy: true});
 				continue;
 			}
-
-			const sourceFile = path.join(this.sourceIn, relDir, file);
-			const fileUrl = new URL(relPath, globalSettings.rootUrl);
-			const fileProps = fileStat(sourceFile);
-
-			if ( fileProps.isDirectory() ) {
-
-				collection = [
-					...collection,
-					...await this.collect(relPath),
-				];
-
-			} else if (path.extname(file) === '.md') {
-
-				const node = await MarkdownCompiler.parseFile(sourceFile);
-
-				collection.push({
-					type: node.type ?? 'page',
-					path: relPath,
-					filePath: path.join(this.sourceIn, relPath),
-					mtime: fileProps.mtime,
-					url: fileUrl,
-					...node,
-				});
-
-			} else {
-				collection.push({
-					type: '@asset',
-					path: relPath,
-					filename: file,
-					filePath: path.join(this.sourceIn, relPath),
-					destPath: path.join(this.destOut, relPath),
-					mtime: fileProps.mtime,
-					url: fileUrl,
-					copy: (
-						this.buildOptions?.copyAssets ?? [ '.ico', '.gif', '.jpg', '.jpeg', '.webp', '.png', '.svg' ]
-				 	).includes( path.extname(file) ),
-					version: this.assetVersion ?? fileProps.mtime,
-				});
+			if (props.ext === '.md') {
+				try {
+					const template = await Template.new( compiled.contents?.type ?? 'page' );
+					compiled.contents = await template.render( { ...compiled.contents }, compiled, this );
+				} catch (error) {
+					compiled.error = {
+						type: 'TemplateError',
+						message: error.message,
+						stack: error.stack,
+					}
+				}
+				toWrite.push(compiled);
 			}
-
 		}
-
-		return collection;
-
+		return await super.write( compiled );
 	}
 
 	static async parseFile( filePath ) {

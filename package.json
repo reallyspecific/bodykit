@@ -1,6 +1,6 @@
 {
   "name": "@reallyspecific/bodykit",
-  "version": "1.3.7",
+  "version": "1.4.0",
   "main": "main.js",
   "license": "GPL-3.0-or-later",
   "type": "module",
@@ -8,13 +8,13 @@
     "bodykit": "main.js"
   },
   "exports": {
-    ".": "./util/compiler.js"
+    "compiler": "./util/compiler.js"
   },
   "scripts": {
-    "test:build": "node main.js --build=all --in=test-assets/in --out=test-assets/out",
-    "test:fonts": "node main.js --build=fonts --in=test-assets/in --out=test-assets/out",
-    "test:watch": "node main.js --watch --in=test-assets/in",
-    "test:server": "node main.js --watch --serve=test-assets/out --in=test-assets/in --out=test-assets/out"
+    "test:build-all": "node main.js --config='./test-assets/default.json'",
+    "test:fonts": "node main.js --config=test-assets/fonts.json",
+    "test:watch": "node main.js --watch --config='./test-assets/default.json'",
+    "test:server": "node main.js --watch --serve='./test-assets/out' --config='./test-assets/default.json'"
   },
   "dependencies": {
     "@node-minify/core": "^9.0.2",
@@ -23,11 +23,13 @@
     "browserslist": "^4.23.0",
     "esbuild": "^0.25.0",
     "express": "^4.18.3",
+    "glob": "^11.0.3",
     "lightningcss": "^1.30.1",
     "markdown-it": "^14.1.0",
     "minimatch": "^10.0.3",
     "php-date": "^4.0.1",
     "readline": "^1.3.0",
+    "segfault-handler": "^1.3.0",
     "socket.io": "^4.7.5",
     "string-strip-html": "^13.4.6"
   },
@@ -43,16 +45,5 @@
   "bugs": {
     "url": "https://github.com/reallyspecific/bodykit/issues"
   },
-  "homepage": "https://github.com/reallyspecific/bodykit#readme",
-  "config": {
-    "bodykit": {
-      "font": {
-        "embedded": "assets/css/fonts.css"
-      },
-      "js": {
-        "exclude": "assets/js/excluded/*"
-      },
-      "exclude": "**/exclude/*"
-    }
-  }
+  "homepage": "https://github.com/reallyspecific/bodykit#readme"
 }

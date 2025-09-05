@@ -80,10 +80,11 @@ export default class Listener {
 	stop() {
 		this.server.close();
 	}
-	restart() {
-	}
 
-	refresh() {
+	refresh( reload = false ) {
+		if ( reload ) {
+			return this.reload();
+		}
 		this.socket.emit( 'refresh' );
 	}
 	reload() {

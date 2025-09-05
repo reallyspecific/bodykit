@@ -4,34 +4,40 @@ import {
 	existsSync as fileExists,
 	writeFileSync as writeFile,
 } from 'fs';
+
 import { parseArgs } from 'node:util';
 
 export const globalSettings = {
-	build:     'all',
-	watch:     false,
-	run:       false,
-	cwd:       process.cwd(),
-	sourceIn:  path.join( process.cwd(), 'source' ),
-	destOut:   path.join( process.cwd(), 'dist' ),
-	exclude:   [],
-	host:      'localhost',
-	port:      8080,
-	socket:    8081,
-	replace:   null,
+	build:      'all',
+	watch:      false,
+	run:        false,
+	cwd:        process.cwd(),
+	sourceIn:   path.join( process.cwd(), 'source' ),
+	destOut:    path.join( process.cwd(), 'dist' ),
+	filename:   '[path]/[name].[ext]',
+	exclude:    [],
+	ignore:     [ '{.|~|_}*', '*{~|.map|.lock}' ],
+	host:       'localhost',
+	port:       8080,
+	socket:     8081,
+	replace:    null,
 	rootUrl:   'http://localhost:8080',
-	serve:     '',
-	filenames: false,
-	locale:    'en-US',
-	env:       'production',
-	phpVersion: false,
-
+	serve:      '',
+	locale:     'en-US',
+	env:        'production',
+	compilers:  [ 'css', 'js', 'md' ],
+	targets:    null,
 };
+
+export function getSetting(key) {
+	return globalSettings[key];
+}
 
 export function updateGlobalSetting( key, value ) {
 	globalSettings[key] = value;
 }
 
-export function parseSettings( cwd ) {
+export async function parseSettings( cwd ) {
 
 	const { values } = parseArgs( {
 		options: {
@@ -56,6 +62,10 @@ export function parseSettings( cwd ) {
 			out: {
 				type:  'string',
 				short: 'o'
+			},
+			filename: {
+				type:  'string',
+				short: 'f'
 			},
 			replace: {
 				type:  'boolean',
@@ -92,6 +102,12 @@ export function parseSettings( cwd ) {
 			},
 			exclude: {
 				type: 'string'
+			},
+			ignore: {
+				type: 'string'
+			},
+			plugins: {
+				type: 'string'
 			}
 		},
 		tokens: true
@@ -105,14 +121,18 @@ export function parseSettings( cwd ) {
 		}
 	}
 
-	const packageFile = readFile( path.join( process.cwd(), 'package.json' ) );
+	const packageFile = path.join( process.cwd(), values['config'] ?? 'package.json' );
 	if ( packageFile ) {
-		const packageSettings = JSON.parse( packageFile );
+		let packageSettings = JSON.parse( readFile( packageFile ) );
+		if ( path.basename( packageFile ) === 'package.json' ) {
+			packageSettings = packageSettings?.config?.bodykit ?? [];
+		}
 		if ( packageSettings && ( packageSettings.config?.bodykit ?? false ) ) {
 			for ( let key in packageSettings.config.bodykit ) {
 				values[key] = packageSettings.config.bodykit[ key ];
 			}
 		}
+		values.config = packageSettings;
 	}
 
 	const newSettings = {
@@ -121,26 +141,33 @@ export function parseSettings( cwd ) {
 		run:            values.run ?? null,
 		sourceIn:       path.join( cwd, values.in ?? 'source' ),
 		destOut:        path.join( cwd, values.out ?? 'public' ),
+		filename:       values.filename ?? '[path]/[name].[ext]',
+		ignore:         values.ignore ?? [ '{.|~|_}*', '*{~|.map|.lock}' ],
 		exclude:        values.exclude ?? [],
 		rootUrl:        values.url || null,
 		replace:        values.replace ?? null,
-		filenames:      values.filenames || null,
 		host:           values.host ?? null,
 		port:           values.port ?? 8080,
 		socket:         values.port ?? 8081,
 		serve:          values.serve ? path.join( cwd, values.serve ) : '',
-		targetBrowsers: values.targetBrowsers || null,
-		cssOptions:     values.css ?? [],
-		jsOptions:      values.js ?? [],
-		fontOptions:    values.font ?? [],
+		targets:        values.targetBrowsers || null,
 		mode:           values.debug ? 'debug' : 'production',
 		phpVersion:     !! values.versioning,
+		package:        packageFile ?? null,
+		compilers:      values.plugins ?? ['css','js','md'],
+		config:         values.config,
 	};
 	if ( typeof newSettings.exclude === 'string' ) {
 		newSettings.exclude = [ newSettings.exclude ];
 	}
+	if ( typeof newSettings.ignore === 'string' ) {
+		newSettings.ignore = [ newSettings.ignore ];
+	}
 	if ( newSettings.replace === null ) {
 		newSettings.replace = ( newSettings.sourceIn !== newSettings.destOut );
+	}
+	if ( typeof newSettings.compilers === 'string' ) {
+		newSettings.compilers = newSettings.compilers.split(',');
 	}
 
 	for ( const key in newSettings ) {
@@ -154,12 +181,12 @@ export function parseSettings( cwd ) {
 }
 
 /**
- * Creates a PHP file returning the current timestamp as a version number.
+ * TODO: refactor this entirely
  */
 export function bumpVersion( destOut ) {
 
 	if ( ! destOut ) {
-		destOut = globalSettings.destOut;
+		destOut = globalSettings.destOut ?? process.cwd();
 	}
 
 	const versionFile = path.join( destOut, 'version.php' );
