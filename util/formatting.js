@@ -1,6 +1,6 @@
 import {stripHtml} from "string-strip-html";
 import markdownit from "markdown-it";
-import {globalSettings} from "./settings.js";
+import {getSetting} from "./settings.js";
 import phpDate from "php-date";
 
 export function makeSlug( str ) {
@@ -77,7 +77,7 @@ export function getVar( type, name, attrs, node ) {
 				value = new Date();
 				break;
 			case 'url':
-				value = globalSettings.rootUrl;
+				value = getSetting('rootUrl');
 				break;
 		}
 	}
@@ -123,7 +123,7 @@ export function parseVars( stringTemplate, node, args = {} ) {
 			value = value.getFullYear();
 		}
 		if ( args._.includes('longdate') ) {
-			value = new Date( value ).toLocaleDateString( globalSettings.locale, { year: 'numeric', month: 'long', day: 'numeric' } );
+			value = new Date( value ).toLocaleDateString( getSetting('locale'), { year: 'numeric', month: 'long', day: 'numeric' } );
 		}
 		replacement = replacement.replace( match[0], value );
 	}

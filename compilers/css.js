@@ -1,7 +1,7 @@
 import {bundle} from "lightningcss";
 
 import Compiler from "../util/compiler.js";
-import {globalSettings} from "../util/settings.js";
+import {getSetting} from "../util/settings.js";
 
 export default class CSSCompiler extends Compiler {
 
@@ -63,7 +63,7 @@ export default class CSSCompiler extends Compiler {
 
 			const results = bundle( {
 				filename: props.in,
-				minify: globalSettings.env === 'production',
+				minify: getSetting('env') === 'production',
 				sourceMap: true,
 				targets: this.targets,
 				customAtRules: this.customRules,
@@ -71,7 +71,7 @@ export default class CSSCompiler extends Compiler {
 				...this.options,
 			});
 
-			this.collection.push( { ...props } );
+			this.collection.add( { ...props } );
 
 			return [ {
 				...props,

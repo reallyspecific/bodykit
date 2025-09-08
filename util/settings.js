@@ -127,9 +127,9 @@ export async function parseSettings( cwd ) {
 		if ( path.basename( packageFile ) === 'package.json' ) {
 			packageSettings = packageSettings?.config?.bodykit ?? [];
 		}
-		if ( packageSettings && ( packageSettings.config?.bodykit ?? false ) ) {
-			for ( let key in packageSettings.config.bodykit ) {
-				values[key] = packageSettings.config.bodykit[ key ];
+		if ( packageSettings ) {
+			for ( let key in packageSettings ) {
+				values[key] = packageSettings[ key ];
 			}
 		}
 		values.config = packageSettings;
@@ -186,7 +186,7 @@ export async function parseSettings( cwd ) {
 export function bumpVersion( destOut ) {
 
 	if ( ! destOut ) {
-		destOut = globalSettings.destOut ?? process.cwd();
+		destOut = getSetting('destOut') || process.cwd();
 	}
 
 	const versionFile = path.join( destOut, 'version.php' );

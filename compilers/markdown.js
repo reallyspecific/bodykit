@@ -11,11 +11,13 @@ import {Minimatch} from "minimatch";
 
 export default class MarkdownCompiler extends Compiler {
 
+	static reload = true;
 	static type = 'md';
+
 	copy = [ '*.ico', '*.gif', '*.jpg', '*.jpeg', '*.webp', '*.png', '*.svg' ];
 	useFilenames = false;
 
-	filename = ( path, basename ) => {
+	filenamePattern = ( { basename } ) => {
 		if ( this.useFilenames || basename === 'index' ) {
 			return '[path]/[name].html';
 		} else {
@@ -25,19 +27,19 @@ export default class MarkdownCompiler extends Compiler {
 
 	constructor( buildOptions, props ) {
 		super( buildOptions, props );
-		this.copy.forEach( pattern => {
-			pattern = new Minimatch( pattern );
+		this.copy.forEach( (pattern, index) => {
+			this.copy[index] = new Minimatch( pattern );
 		} );
 	}
 
 
 	async compile( props = {} ) {
-		const collected = this.recurseDirectory( {
-			in: this.sourceIn,
+		const collected = await this.walkDirectory( {
+			in: './',
 			build: this.build.bind(this),
 		} );
 		collected.forEach( writeable => {
-			this.write( writeable );
+			this.write( [ writeable ] );
 		} );
 		return this.collection;
 	}
@@ -50,7 +52,7 @@ export default class MarkdownCompiler extends Compiler {
 			contents: node,
 		}
 
-		this.collection.push( built );
+		this.collection.add( built );
 
 		return [ built ];
 
@@ -59,30 +61,34 @@ export default class MarkdownCompiler extends Compiler {
 
 	async write( compiled ) {
 		const toWrite = [];
-		for ( const props in compiled ) {
+		for ( const props of compiled ) {
 			if (props.error) {
 				toWrite.push(props);
 				continue;
 			}
-			if (props.ext !== '.md' && this.match(compiled.filename, this.copy)) {
+			if (props.ext !== '.md' && this.match(props.filename, this.copy)) {
 				toWrite.push({...props, copy: true});
 				continue;
 			}
 			if (props.ext === '.md') {
 				try {
-					const template = await Template.new( compiled.contents?.type ?? 'page' );
-					compiled.contents = await template.render( { ...compiled.contents }, compiled, this );
+					const template = Template.new( props.contents?.type ?? 'page' );
+					props.contents = await template.render( { ...props.contents }, props, this );
+					toWrite.push(props);
 				} catch (error) {
-					compiled.error = {
-						type: 'TemplateError',
-						message: error.message,
-						stack: error.stack,
-					}
+					toWrite.push( {
+						filename: props.filename,
+						error: {
+							type: 'TemplateError',
+							message: error.message,
+							stack: error.stack,
+						}
+					} );
 				}
-				toWrite.push(compiled);
+
 			}
 		}
-		return await super.write( compiled );
+		return await super.write( toWrite );
 	}
 
 	static async parseFile( filePath ) {

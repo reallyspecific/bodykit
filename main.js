@@ -76,10 +76,10 @@ async function main() {
 		}
 	}
 
+	await build( props.build );
+
 	if ( props.watch ) {
 		watch( props );
-	} else {
-		await build( props.build );
 	}
 
 }

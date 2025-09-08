@@ -1,9 +1,7 @@
 
 import { lstatSync as fileStat } from 'fs';
 import path from 'path';
-import { URL } from 'url';
 import {buildHTMLTag, makeSlug} from "../../util/formatting.js";
-import {globalSettings} from "../../util/settings.js";
 import Compiler from "../../util/compiler.js";
 
 export default async function ( tag ) {
@@ -12,30 +10,40 @@ export default async function ( tag ) {
 		throw SyntaxError( `Missing type for @asset tag at ${tag.file}:${tag.index}` );
 	}
 
-	let version = null, url = null, path = null;
+	let url = null, filepath = null;
 
 	if ( !! tag.attrs.name ) {
 		const compiler = Compiler.get(tag.attrs.type);
 		if ( compiler.collection ) {
-			const asset = compiler.collection.find( asset => asset.basename === tag.attrs.name || asset.filepath === tag.attrs.name );
-			if ( asset ) {
-				path = asset.filepath;
-				version = Date.parse( asset.stat.mtime ).toString(36);
+			const asset = compiler.collection.values().find(asset => asset.basename === tag.attrs.name || asset.filepath === tag.attrs.name);
+			if (asset) {
+				filepath = asset.filepath;
 				url = asset.url;
+				url.searchParams.set('v', Date.parse(asset.stat.mtime).toString(36));
 			}
-		} else {
-			path = compiler.out( path.dirname( tag.attrs.name ), tag.basename( tag.attrs.name, type ), type );
-			const file = fileStat( path.join( compiler.destOut, path ) );
-			url = compiler.url( path );
-			if ( file.isFile() ) {
-				version = Date.parse( file.mtime ).toString(36);
-			} else if ( ! tag.optional ) {
-				return '';
+		}
+		if ( ! filepath ) {
+			filepath = compiler.out( path.dirname( tag.attrs.name ), path.basename( tag.attrs.name, tag.attrs.type ), '.' + tag.attrs.type );
+			try {
+				const file = fileStat(path.join(compiler.destOut, filepath));
+				url = compiler.url(filepath);
+				if (file.isFile()) {
+					url.searchParams.set('v', Date.parse(file.mtime).toString(36));
+				}
+			} catch( error ) {
+				filepath = null;
 			}
 		}
 	}
 
-	const assetSlug = makeSlug( path );
+	if ( filepath === null ) {
+		if ( tag.attrs.optional ) {
+			return '';
+		}
+		throw SyntaxError( `Could not find asset: ${tag.attrs.name} at ${tag.file}:${tag.index}` );
+	}
+
+	const assetSlug = makeSlug( path.basename( filepath ) );
 
 	if ( tag.attrs.type === 'css' ) {
 		const attrs = {
