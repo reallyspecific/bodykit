@@ -13,6 +13,7 @@ import {browserslistToTargets} from "lightningcss";
 import browserslist from "browserslist";
 
 import {getSetting} from "./settings.js";
+import {matchPatterns} from "./files.js";
 
 export default class Compiler {
 
@@ -27,6 +28,8 @@ export default class Compiler {
 	destOut = getSetting('destOut');
 	ignore = getSetting('ignore') ?? [];
 	exclude = getSetting('exclude') ?? [];
+
+	clean = null;
 
 	targets = browserslistToTargets( browserslist( getSetting('targets') ?? 'last 2 versions' ) );
 
@@ -52,6 +55,17 @@ export default class Compiler {
 		if ( props ) {
 			this.props = { ...this.props, ...props };
 		}
+		for( const matcher in [ this.ignore, this.include, this.exclude, this.clean ] ) {
+			if ( ! Array.isArray( this[matcher] ) ) {
+				this[matcher] = [ this[matcher] ];
+			}
+			this[matcher] = this[matcher].map( matcher => {
+				if ( typeof matcher === 'string' ) {
+					return new Minimatch( matcher );
+				}
+				return matcher;
+			} );
+		}
 	}
 
 	static registeredCompilers = new Map();
@@ -66,7 +80,7 @@ export default class Compiler {
 		}
 		if ( Array.isArray( which ) ) {
 			return Compiler.registeredCompilers.values()
-				.filter( compiler => which.includes( compiler.type ) )
+				.filter( compiler => which.includes( compiler.constructor.type ) )
 
 		}
 		return Compiler.registeredCompilers.get( which );
@@ -85,7 +99,7 @@ export default class Compiler {
 	}
 
 	out( path, basename, ext ) {
-		let pathParts = path ? path.split( path.sep ) : [];
+		let pathParts = path ? path.split( '/' ) : [];
 		while ( pathParts.length && ( pathParts[0] === '.' || pathParts[0] === '..' || pathParts[0] === '' ) ) {
 			pathParts.shift();
 		}
@@ -93,11 +107,11 @@ export default class Compiler {
 		if ( typeof this.filenamePattern === 'function' ) {
 			outputPath = this.filenamePattern( { path, basename, ext, tree: pathParts } );
 		}
-		outputPath = outputPath.replaceAll( '[path]', path ?? '' );
+		outputPath = outputPath.replaceAll( '[path]', pathParts.join('/').toLowerCase() ?? '' );
 		if ( pathParts.length ) {
 			outputPath = outputPath.replaceAll('[path:last]', getSetting('rootUrl') );
 			for ( const partIndex in pathParts ) {
-				outputPath.replaceAll(`[path:${partIndex}]`, pathParts[partIndex] );
+				outputPath = outputPath.replaceAll(`[path:${partIndex}]`, pathParts[partIndex].toLowerCase() );
 			}
 		}
 		outputPath = outputPath.replaceAll( '[name]', basename );
@@ -112,6 +126,7 @@ export default class Compiler {
 	}
 
 	async compile() {
+
 		this.collection = new Set();
 		return this.walkDirectory( {
 			in: './',
@@ -202,22 +217,8 @@ export default class Compiler {
 
 	}
 
-	match( filePath, matchers = null, matchAny = true ) {
-		if ( Array.isArray( matchers ) ) {
-			for( let matcher of matchers ) {
-				if ( ! ( matcher instanceof Minimatch ) ) {
-					matcher = new Minimatch( matcher );
-				}
-				if ( matchAny && matcher.match( filePath ) ) {
-					return true;
-				}
-				if ( ! matchAny && ! matcher.match( filePath ) ) {
-					return false;
-				}
-			}
-			return ! matchAny;
-		}
-		return matchers.match( filePath );
+	match( ...args ) {
+		return matchPatterns( ...args );
 	}
 
 }

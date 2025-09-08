@@ -11,7 +11,9 @@
     "compiler": "./util/compiler.js"
   },
   "scripts": {
+    "publish": "npm publish --public",
     "test:build-all": "node main.js --config='./test-assets/default.json'",
+    "test:clean": "node main.js --config='./test-assets/clean-test.json'",
     "test:fonts": "node main.js --config=test-assets/fonts.json",
     "test:watch": "node main.js --watch --config='./test-assets/default.json'",
     "test:server": "node main.js --watch --serve='./test-assets/out' --config='./test-assets/default.json'"

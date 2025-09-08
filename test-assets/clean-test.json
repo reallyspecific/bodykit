@@ -1,7 +1,7 @@
 {
-  "build": "all",
+  "build": ["css","js"],
   "exclude": "**/exclude/*",
-  "clean": true,
+  "clean": [ "!*.html" ],
   "in": "test-assets/in",
   "out": "test-assets/out",
   "js": {

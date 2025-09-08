@@ -1,11 +1,13 @@
+import { parseArgs } from 'node:util';
 import path from 'path';
 import {
 	readFileSync as readFile,
 	existsSync as fileExists,
-	writeFileSync as writeFile,
+	writeFileSync as writeFile, rmSync as rm,
 } from 'fs';
+import {Minimatch} from "minimatch";
+import {globSync as glob} from "glob";
 
-import { parseArgs } from 'node:util';
 
 export const globalSettings = {
 	build:      'all',
@@ -15,12 +17,12 @@ export const globalSettings = {
 	sourceIn:   path.join( process.cwd(), 'source' ),
 	destOut:    path.join( process.cwd(), 'dist' ),
 	filename:   '[path]/[name].[ext]',
-	exclude:    [],
-	ignore:     [ '{.|~|_}*', '*{~|.map|.lock}' ],
+	exclude:    [ '**/node_modules/**', '**/vendor/**' ],
+	ignore:     [ '{.,~,_}*', '*{~,.map,.lock}' ],
 	host:       'localhost',
 	port:       8080,
 	socket:     8081,
-	replace:    null,
+	clean:      null,
 	rootUrl:   'http://localhost:8080',
 	serve:      '',
 	locale:     'en-US',
@@ -51,9 +53,11 @@ export async function parseSettings( cwd ) {
 			},
 			watch: {
 				type:  'boolean',
+				short: 'w'
 			},
-			run: {
-				type:  'boolean',
+			serve: {
+				type:  'string',
+				short: 's',
 			},
 			in: {
 				type:  'string',
@@ -63,31 +67,32 @@ export async function parseSettings( cwd ) {
 				type:  'string',
 				short: 'o'
 			},
+			exclude: {
+				type: 'string',
+				short: 'x',
+			},
+			ignore: {
+				type: 'string',
+				short: 'g'
+			},
 			filename: {
-				type:  'string',
-				short: 'f'
-			},
-			replace: {
-				type:  'boolean',
-				short: 'r'
-			},
-			url: {
-				type:  'string',
-				short: 'u'
-			},
-			host: {
-				type:  'string',
-				short: 'h'
-			},
-			socket: {
-				type:  'string',
-				short: 's'
-			},
-			port: {
 				type:  'string',
 				short: 'p'
 			},
-			serve: {
+			clean: {
+				type:  'boolean',
+				short: 'd'
+			},
+			url: {
+				type:  'string',
+			},
+			host: {
+				type:  'string',
+			},
+			socket: {
+				type:  'string',
+			},
+			port: {
 				type:  'string',
 			},
 			targetBrowsers: {
@@ -95,16 +100,9 @@ export async function parseSettings( cwd ) {
 			},
 			debug: {
 				type:  'boolean',
-				short: 'd'
 			},
 			versioning: {
 				type:  'boolean',
-			},
-			exclude: {
-				type: 'string'
-			},
-			ignore: {
-				type: 'string'
 			},
 			plugins: {
 				type: 'string'
@@ -123,7 +121,7 @@ export async function parseSettings( cwd ) {
 
 	const packageFile = path.join( process.cwd(), values['config'] ?? 'package.json' );
 	if ( packageFile ) {
-		let packageSettings = JSON.parse( readFile( packageFile ) );
+		let packageSettings = JSON.parse( readFile( packageFile, 'utf8' ) );
 		if ( path.basename( packageFile ) === 'package.json' ) {
 			packageSettings = packageSettings?.config?.bodykit ?? [];
 		}
@@ -137,15 +135,14 @@ export async function parseSettings( cwd ) {
 
 	const newSettings = {
 		build:          values.build ?? null,
-		watch:          values.run ?? values.watch ?? null,
-		run:            values.run ?? null,
+		watch:          values.watch ?? null,
 		sourceIn:       path.join( cwd, values.in ?? 'source' ),
 		destOut:        path.join( cwd, values.out ?? 'public' ),
 		filename:       values.filename ?? '[path]/[name].[ext]',
-		ignore:         values.ignore ?? [ '{.|~|_}*', '*{~|.map|.lock}' ],
+		ignore:         values.ignore ?? [ '{.,~,_}*', '*{~,.map,.lock}' ],
 		exclude:        values.exclude ?? [],
 		rootUrl:        values.url || null,
-		replace:        values.replace ?? null,
+		clean:          values.clean ?? null,
 		host:           values.host ?? null,
 		port:           values.port ?? 8080,
 		socket:         values.port ?? 8081,
@@ -163,8 +160,11 @@ export async function parseSettings( cwd ) {
 	if ( typeof newSettings.ignore === 'string' ) {
 		newSettings.ignore = [ newSettings.ignore ];
 	}
-	if ( newSettings.replace === null ) {
-		newSettings.replace = ( newSettings.sourceIn !== newSettings.destOut );
+	if ( newSettings.clean === null ) {
+		newSettings.clean = newSettings.build === 'all' && ( newSettings.sourceIn !== newSettings.destOut );
+	}
+	if ( newSettings.clean && typeof newSettings.clean === 'string' ) {
+		newSettings.clean = newSettings.clean.split(',');
 	}
 	if ( typeof newSettings.compilers === 'string' ) {
 		newSettings.compilers = newSettings.compilers.split(',');
@@ -193,7 +193,7 @@ export function bumpVersion( destOut ) {
 	const versionCode = `<?php\nreturn '1.0.${Date.now()}';\n`;
 
 	if ( fileExists( path.join( destOut, 'package.json' ) ) ) {
-		const packageJson = JSON.parse( readFile( path.join( destOut, 'package.json' ) ) );
+		const packageJson = JSON.parse( readFile( path.join( destOut, 'package.json' ), 'utf8' ) );
 		if ( packageJson.version ) {
 			const version = packageJson.version.split( '.' );
 			if ( version.length > 2 ) {
@@ -209,3 +209,4 @@ export function bumpVersion( destOut ) {
 	writeFile( versionFile, versionCode );
 
 }
+

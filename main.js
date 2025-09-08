@@ -2,14 +2,13 @@
 
 import SegfaultHandler from 'segfault-handler';
 
-import {rmSync as rm, existsSync as fileExists } from 'fs';
-
 import Compiler from "./util/compiler.js";
 import CSSCompiler from "./compilers/css.js";
 import MarkdownCompiler from "./compilers/markdown.js";
 import JSCompiler from "./compilers/js.js";
 
 import {getSetting, parseSettings} from "./util/settings.js";
+import {cleanFolder} from "./util/files.js";
 import Listener from "./server.js";
 import Watcher from "./util/watcher.js";
 
@@ -17,12 +16,16 @@ SegfaultHandler.registerHandler('/crash.log');
 
 const build = async ( what ) => {
 
-	if ( what === 'all' && getSetting('replace') && fileExists( getSetting('destOut') ) ) {
-		rm( getSetting('destOut'), {recursive: true} );
+	const clean = getSetting('clean');
+	if ( what === getSetting('build') && clean ) {
+		cleanFolder( clean, getSetting('destOut') );
 	}
 
 	const compilers = Compiler.get(what);
 	for( const compiler of compilers ) {
+		if ( compiler.clean ) {
+			cleanFolder( compiler.clean, compiler.destOut );
+		}
 		await compiler.compile();
 	}
 };
