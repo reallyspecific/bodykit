@@ -37,7 +37,7 @@ export default class MarkdownCompiler extends Compiler {
 
 	async compile( props = {} ) {
 		const collected = await this.walkDirectory( {
-			in: './',
+			in: '',
 			build: this.build.bind(this),
 		} );
 		collected.forEach( writeable => {

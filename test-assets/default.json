@@ -1,13 +1,11 @@
 {
   "build": "all",
-  "exclude": "**/exclude/*",
+  "plugins": [ "css", "js", "md" ],
+  "exclude": [ "**/exclude/*", "**/node_modules/**", "./_modules/**" ],
   "clean": true,
   "in": "test-assets/in",
   "out": "test-assets/out",
   "js": {
-    "exclude": "assets/js/excluded/*"
-  },
-  "md": {
-    "exclude": "**/*.ttf"
+    "exclude": "**/excluded/**"
   }
 }

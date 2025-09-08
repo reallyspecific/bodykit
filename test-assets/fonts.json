@@ -1,11 +1,11 @@
 {
   "build": ["fonts"],
   "plugins": ["fonts"],
-  "in": "test-assets/in",
-  "out": "test-assets/out",
+  "in": "./test-assets/in",
+  "out": "./test-assets/out",
   "clean": false,
   "fonts": {
-    "embedded": "assets/css/embedded",
+    "embedded": "assets/css/embedded.fonts.css",
     "compileContent": {
       "source": "./test-assets/out"
     }

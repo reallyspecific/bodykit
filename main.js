@@ -53,6 +53,19 @@ async function main() {
 
 	const props = await parseSettings( process.cwd() );
 	for( const compiler of props.compilers ) {
+
+		const externalModuleArgs = {
+			sourceIn: props.sourceIn,
+			destOut:  props.destOut,
+			filenamePattern: props.filenamePattern,
+			ignore:   props.ignore,
+			exclude:  props.exclude,
+			include:  props.include,
+			rootUrl:  props.url,
+			targets:  props.targets,
+			...props.config?.[compiler] ?? {},
+		};
+
 		switch( compiler ) {
 			case 'css':
 				Compiler.register( CSSCompiler, props.config?.css ?? {} );
@@ -76,7 +89,7 @@ async function main() {
 					console.error( `${compiler} compiler not available, is @reallyspecific/bodykit-${compiler} installed?` );
 				}
 				if ( ModuleCompiler ) {
-					Compiler.register( ModuleCompiler, props.config?.[compiler] ?? {} );
+					Compiler.register( ModuleCompiler, externalModuleArgs );
 				}
 				break;
 			default:
@@ -86,7 +99,7 @@ async function main() {
 					console.error( `${compiler} compiler not available, is it installed?` );
 				}
 				if ( ModuleCompiler ) {
-					Compiler.register( ModuleCompiler, props.config?.[compiler] ?? {} );
+					Compiler.register( ModuleCompiler, externalModuleArgs );
 				}
 				break;
 		}

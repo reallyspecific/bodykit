@@ -1,6 +1,6 @@
 {
   "name": "@reallyspecific/bodykit",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "main": "main.js",
   "license": "GPL-3.0-or-later",
   "type": "module",
@@ -8,8 +8,7 @@
     "bodykit": "main.js"
   },
   "exports": {
-    "compiler": "./util/compiler.js",
-    "utils": "./util/settings.js"
+    "./compiler": "./util/compiler.js"
   },
   "scripts": {
     "publish": "npm publish --public",
