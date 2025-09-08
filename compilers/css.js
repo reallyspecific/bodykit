@@ -14,7 +14,7 @@ export default class CSSCompiler extends Compiler {
 	queryRules = new Map();
 	env = [];
 
-	clean = ['*.css','*.css.map'];
+	clean = ['*.css','*.css.map','!.fonts.css'];
 
 	customRules = {
 		mixin: {

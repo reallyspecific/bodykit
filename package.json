@@ -1,6 +1,6 @@
 {
   "name": "@reallyspecific/bodykit",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "main": "main.js",
   "license": "GPL-3.0-or-later",
   "type": "module",
@@ -8,13 +8,14 @@
     "bodykit": "main.js"
   },
   "exports": {
-    "compiler": "./util/compiler.js"
+    "compiler": "./util/compiler.js",
+    "utils": "./util/settings.js"
   },
   "scripts": {
     "publish": "npm publish --public",
     "test:build-all": "node main.js --config='./test-assets/default.json'",
     "test:clean": "node main.js --config='./test-assets/clean-test.json'",
-    "test:fonts": "node main.js --config=test-assets/fonts.json",
+    "test:fonts": "node main.js --config='./test-assets/fonts.json'",
     "test:watch": "node main.js --watch --config='./test-assets/default.json'",
     "test:server": "node main.js --watch --serve='./test-assets/out' --config='./test-assets/default.json'"
   },
@@ -36,9 +37,6 @@
     "string-strip-html": "^13.4.6"
   },
   "description": "A small, fast CLI for building web assets without a ton of overhead or frameworks.",
-  "devDependencies": {
-    "@reallyspecific/bodykit-fonts": "^1.0.2"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/reallyspecific/bodykit.git"

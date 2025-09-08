@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
 import SegfaultHandler from 'segfault-handler';
+import { existsSync as fileExists } from 'fs';
+import path from 'path';
 
 import Compiler from "./util/compiler.js";
 import CSSCompiler from "./compilers/css.js";
@@ -62,18 +64,29 @@ async function main() {
 				Compiler.register( MarkdownCompiler, props.config?.md ?? {} );
 				break;
 			case 'fonts':
+			case 'scss':
+				let ModuleCompiler = null;
+				let modulePath = `@reallyspecific/bodykit-${compiler}`;
+				if ( fileExists( path.join( process.cwd(), `_modules/${compiler}/main.js` ) ) ) {
+					modulePath = path.join( process.cwd(), `_modules/${compiler}/main.js` );
+				}
 				try {
-					const {default: FontCompiler} = await import("@reallyspecific/bodykit-fonts");
-					Compiler.register( FontCompiler, props.config?.fonts ?? {} );
+					ModuleCompiler = ( await import(modulePath) ).default;
 				} catch( error ) {
-					console.error( 'Font compiler not available, is @reallyspecific/bodykit-fonts installed?' );
+					console.error( `${compiler} compiler not available, is @reallyspecific/bodykit-${compiler} installed?` );
+				}
+				if ( ModuleCompiler ) {
+					Compiler.register( ModuleCompiler, props.config?.[compiler] ?? {} );
 				}
 				break;
 			default:
 				try {
-					Compiler.register( Symbol( compiler ), props.config[ compiler ] ?? {} );
+					ModuleCompiler = ( await import(compiler) ).default;
 				} catch( error ) {
-					console.error( 'Could not find compiler: ' + compiler );
+					console.error( `${compiler} compiler not available, is it installed?` );
+				}
+				if ( ModuleCompiler ) {
+					Compiler.register( ModuleCompiler, props.config?.[compiler] ?? {} );
 				}
 				break;
 		}

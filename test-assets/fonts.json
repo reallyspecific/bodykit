@@ -1,9 +1,13 @@
 {
-  "build": "fonts",
+  "build": ["fonts"],
+  "plugins": ["fonts"],
   "in": "test-assets/in",
-  "out": "test-assets/in",
-  "replace": false,
-  "build": {
-    "embedded": "assets/css/fonts.css"
+  "out": "test-assets/out",
+  "clean": false,
+  "fonts": {
+    "embedded": "assets/css/embedded",
+    "compileContent": {
+      "source": "./test-assets/out"
+    }
   }
 }

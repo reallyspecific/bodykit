@@ -90,12 +90,25 @@ export default class Compiler {
 		return false;
 	}
 
-	find( relPath = null ) {
+	find( relPath = null, include = this.include ) {
 		let absPath = this.sourceIn;
 		if ( relPath ) {
-			absPath = path.join( absPath, relPath );
+			if ( relPath.startsWith( '/' ) ) {
+				absPath = relPath;
+			} else if ( relPath.startsWith( '.' ) ) {
+				absPath = path.join( process.cwd(), relPath );
+			} else {
+				absPath = path.join( absPath, relPath );
+			}
 		}
-		return glob( path.join( absPath, '**/' + this.include ), { recursive:true, withFileTypes: true } );
+		const found = new Set();
+		for ( const included in include ) {
+			glob( path.join( absPath, '**/' + included ), { recursive:true, withFileTypes: true } ).forEach( file => {
+				found.add( file );
+			} );
+		}
+		return found.values();
+
 	}
 
 	out( path, basename, ext ) {
@@ -174,15 +187,15 @@ export default class Compiler {
 
 	async walkDirectory( props ) {
 
-		const files = this.find( props.in ?? null );
+		const files = this.find( props.in ?? null, props.include ?? this.include );
 
 		const out = new Set();
 		for (const file of files) {
-			if ( file.isDirectory() || ! this.match( file.name, this.include ) || this.match( file.name, this.ignore ) ) {
+			if ( file.isDirectory() || ! this.match( file.name, props.include ?? this.include ) || this.match( file.name, props.ignore ?? this.ignore ) ) {
 				continue;
 			}
 			let filepath = path.relative( this.sourceIn, file.fullpath() );
-			if ( this.match( filepath, this.exclude ) ) {
+			if ( this.match( filepath, props.exclude ?? this.exclude ) ) {
 				continue;
 			}
 
