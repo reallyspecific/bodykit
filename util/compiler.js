@@ -31,7 +31,7 @@ export default class Compiler {
 
 	clean = null;
 
-	targets = browserslistToTargets( browserslist( getSetting('targets') ?? 'last 2 versions' ) );
+	targets = null;
 
 	collection = new Set();
 	props = {};
@@ -54,6 +54,9 @@ export default class Compiler {
 		}
 		if ( props ) {
 			this.props = { ...this.props, ...props };
+		}
+		if ( buildOptions.targets ) {
+			this.targets = browserslistToTargets( browserslist( buildOptions.targets ) );
 		}
 		for( const matcher in [ this.ignore, this.include, this.exclude, this.clean ] ) {
 			if ( ! Array.isArray( this[matcher] ) ) {
@@ -159,13 +162,17 @@ export default class Compiler {
 		for ( const file of compiled ) {
 
 			if ( file.error ) {
-				switch ( file.error.type ) {
-					case 'ParserError':
-					case 'SyntaxError':
-						console.log(`\x1b[31m${file.fileName}: ${file.error.message}\r\n    in ${file.error.path} (${file.error.line}:${file.error.column})\x1b[0m`);
-						break;
-					default:
-						console.log(`\x1b[31m${file.fileName}: ${JSON.stringify(file.error, null, 4)}\x1b[0m`);
+				if ( typeof file.error === 'string' ) {
+					console.log( file.error );
+				}
+				else if ( file.error.message ) {
+					console.log(`\x1b[31m${file.filepath}: ${file.error.message}\x1b[0m`);
+					if ( file.error.stack ) {
+						console.log( file.error.stack );
+					}
+				}
+				else {
+					console.log(`\x1b[31m${file.filepath}: ${JSON.stringify(error)}\x1b[0m`);
 				}
 				return;
 			}

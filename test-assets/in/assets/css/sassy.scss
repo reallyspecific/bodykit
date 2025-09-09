@@ -1,0 +1,14 @@
+@use "sass:math";
+@import 'mixins';
+
+$foo: math.div(10, 2);
+
+.foo {
+	color: blue;
+	font-size: $foo;
+}
+
+.bar {
+	@extend .foo;
+	@include test;
+}
