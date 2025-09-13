@@ -19,7 +19,7 @@ export default class JSCompiler extends Compiler {
 			bundle: true,
 			entryPoints: [ props.in ],
 			minify: true,
-			sourcemap: true,
+			sourcemap: 'external',
 			write: false,
 			outdir: path.dirname( props.out ),
 			outExtension: { '.js': '.min.js' },

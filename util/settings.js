@@ -102,7 +102,7 @@ export async function parseSettings( cwd ) {
 				type:  'boolean',
 			},
 			versioning: {
-				type:  'boolean',
+				type:  'string',
 			},
 			plugins: {
 				type: 'string'
@@ -149,7 +149,7 @@ export async function parseSettings( cwd ) {
 		serve:           values.serve ? path.join( cwd, values.serve ) : '',
 		targets:         values.targetBrowsers || null,
 		mode:            values.debug ? 'debug' : 'production',
-		phpVersion:      !! values.versioning,
+		versioning:      values.versioning ?? false,
 		package:         packageFile ?? null,
 		compilers:       values.plugins ?? ['css','js','md'],
 		config:          values.config,
