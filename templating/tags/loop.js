@@ -1,6 +1,6 @@
 import Template from "../templating.js";
 
-export default async function ( node, tag ) {
+export default async function ( node, tag, compiler ) {
 
 	if ( ! tag.attrs.template || ! tag.attrs.type ) {
 		throw SyntaxError( `Loop tag requires a "template" and "type" attribute` );
@@ -21,7 +21,7 @@ export default async function ( node, tag ) {
 
 	let compiled = '';
 	for( const loopNode of filteredContent ) {
-		const rendered = await template.render(loopNode);
+		const rendered = await template.render(loopNode,compiler);
 		if ( !! rendered ) {
 			compiled += rendered;
 		}
