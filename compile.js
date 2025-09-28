@@ -7,104 +7,120 @@ import util from './util.js';
 import fs from 'fs';
 import path from 'path';
 
-export function css( sourceIn, destOut ) {
+async function recurseDirectoryForCompile( props ) {
 
-	const sourcePath = path.join( sourceIn, 'css' );
-	const outputPath = path.join( destOut, 'css' );
+	const sourcePath = path.join( props.sourceIn, props.subfolder ?? '' );
+	const outputPath = path.join( props.destOut, props.subfolder ?? '' );
 
-	return new Promise( ( resolve, reject ) => {
+	if ( ! fs.existsSync( sourcePath ) ) {
+		return;
+	}
 
-		const targets = browserslistToTargets(browserslist('>= 1%'));
+	try {
 
-		try {
+		if ( fs.existsSync( outputPath ) && sourcePath !== outputPath ) {
+			fs.rmSync( outputPath, { recursive: true } );
+		}
+		fs.mkdirSync( outputPath );
 
-			if ( fs.existsSync( outputPath ) && sourcePath !== outputPath ) {
-				fs.rmSync( outputPath, { recursive: true } );
+		fs.readdirSync( sourcePath ).forEach( async file => {
+
+			if ( [ '.', '_', '~' ].includes( file.substring( 0, 1 ) ) ) {
+				return;
 			}
-			fs.mkdirSync( outputPath );
 
-			fs.readdirSync( sourcePath ).forEach( file => {
+			if ( path.basename( file ).endsWith( '.min' ) ) {
+				return;
+			}
 
-				if ( file.substr( 0, 1 ) === '.' || file.substr( 0, 1 ) === '_' ) {
-					return;
-				}
+			if ( props.allowedExtensions && ! props.allowedExtensions.includes( path.extname( file ) ) ) {
+				return;
+			}
 
-				if ( path.extname( file ) !== '.css' ) {
-					return;
-				}
-
-				const { code, map } = bundle( {
-					filename: path.join( sourcePath, file ),
-					minify: true,
-					sourceMap: true,
-					targets
-				} );
-
-				fs.writeFileSync( path.join( outputPath, file ), code );
-				fs.writeFileSync( path.join( outputPath, file + '.map' ), map );
-
+			const compiledFiles = await props.callback( {
+				filePath: path.join( sourcePath, file ),
+				fileName: file,
+				outputPath,
 			} );
 
-		} catch ( error ) {
-			reject( error );
+			if ( compiledFiles ) {
+				compiledFiles.forEach( file => {
+					fs.writeFileSync( path.join( outputPath, file.filename ), file.contents );
+				} );
+			}
+
+		} );
+
+	} catch ( error ) {
+		throw error;
+	}
+
+}
+
+export async function css( sourceIn, destOut ) {
+
+	const targets = browserslistToTargets( browserslist('>= 1%') );
+
+	return await recurseDirectoryForCompile( {
+		sourceIn,
+		destOut,
+		subfolder: 'css',
+		allowedExtensions: [ '.css' ],
+		callback: async ( { fileName, filePath } ) => {
+
+			const { code, map } = bundle( {
+				filename: filePath,
+				minify: true,
+				sourceMap: true,
+				targets
+			} );
+
+			const cssFileName = path.basename( fileName, path.extname( fileName ) ) + '.min.css';
+
+			return [ {
+				filename: cssFileName,
+				contents: code,
+			},{
+				filename: cssFileName + '.map',
+				contents: map,
+			} ];
+
 		}
-
-		resolve();
-
 	} );
 
 }
 
-export function js( sourceIn, destOut ) {
+export async function js( sourceIn, destOut ) {
 
-	const sourcePath = path.join( sourceIn, 'js' );
-	const outputPath = path.join( destOut, 'js' );
+	return recurseDirectoryForCompile( {
+		sourceIn,
+		destOut,
+		subfolder: 'js',
+		allowedExtensions: [ '.js' ],
+		callback: async ( { fileName, filePath, outputPath } ) => {
 
-	return new Promise( ( resolve, reject ) => {
-
-		try {
-
-			const promises = [];
-
-			if ( fs.existsSync( outputPath ) && sourcePath !== outputPath ) {
-				fs.rmSync( outputPath, { recursive: true } );
-			}
-			fs.mkdirSync( outputPath );
-
-			fs.readdirSync( sourcePath ).forEach( file => {
-
-				if ( file.substr( 0, 1 ) === '.' || file.substr( 0, 1 ) === '_' ) {
-					return;
-				}
-
-				if ( path.extname( file ) !== '.js' ) {
-					return;
-				}
-
-				if ( path.basename( file ).endsWith( '.min' ) ) {
-					return;
-				}
-
-				promises.push( esbuild.build( {
-					bundle: true,
-					entryPoints: [ path.join( sourcePath, file ) ],
-					minify: true,
-					outfile: path.join( outputPath, file ),
-					sourcemap: true
-				} ) );
-
+			const build = await esbuild.build( {
+				bundle: true,
+				entryPoints: [ filePath ],
+				minify: true,
+				sourcemap: true,
+				write: false,
+				outdir: outputPath,
+				outExtension: { '.js': '.min.js' },
 			} );
 
-			Promise.all( promises ).then( () => {
-				resolve();
+			const returnFiles = [];
+
+			build.outputFiles.forEach( file => {
+				returnFiles.push( {
+					filename: path.basename( file.path ),
+					contents: file.contents,
+				} );
 			} );
 
-		} catch ( error ) {
-
-			reject( error );
+			return returnFiles;
 
 		}
-
 	} );
 
 };
