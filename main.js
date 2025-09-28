@@ -13,11 +13,11 @@ const runSettings = parseSettings( process.cwd() );
 const build = ( what ) => {
 
 	if ( what === 'css' ) {
-		return compile.css( runSettings.sourceIn, runSettings.destOut, runSettings );
+		return compile.css( runSettings.sourceIn, runSettings.destOut, runSettings.targetBrowsers ?? null );
 	} else if ( what === 'js' ) {
-		return compile.js( runSettings.sourceIn, runSettings.destOut, runSettings ?? null );
+		return compile.js( runSettings.sourceIn, runSettings.destOut, runSettings.targetBrowsers ?? null );
 	} else if ( what === 'fonts' ) {
-		return compile.js( runSettings.sourceIn, runSettings.destOut, runSettings ?? null );
+		return compile.fonts( runSettings.sourceIn, runSettings.destOut, runSettings.fontArgs ?? null );
 	}
 
 	return compile.all( runSettings.sourceIn, runSettings.destOut, runSettings );
