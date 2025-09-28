@@ -20,7 +20,7 @@ bash
 yarn add -D @reallyspecific/bodykit
 ```
 
-This exposes the bodykit binary in your project’s node_modules/.bin.
+This exposes the bodykit binary in your project's node_modules/.bin.
 
 ## Quick start
 
@@ -78,6 +78,12 @@ Common flags:
   compiled files will be built in the same location as their
   source.
 
+- `--exclude=<pattern>` (optional)
+  Exclude files and directories from processing using glob patterns.
+  Supports multiple patterns when used in configuration. Files matching
+  any exclude pattern will be skipped during compilation.
+  Example: `--exclude="temp/**"`
+
 - --watch  
   Start file watching and incremental rebuilds.
 
@@ -104,6 +110,93 @@ bodykit --build=all --in=src --out=dist
 bodykit --watch --in=src/site
 ```
 
+- Exclude specific files or directories:
+```shell script
+bodykit --build=all --in=src --out=dist --exclude="temp/**"
+```
+
+## File Exclusion
+
+Bodykit provides flexible file exclusion capabilities through glob patterns. Files and directories can be excluded from processing using the `--exclude` parameter or configuration settings.
+
+### CLI Usage
+
+Use the `--exclude` flag to exclude files from a single pattern:
+
+```shell script
+bash
+# Exclude all files in any temp directory
+bodykit --build=all --exclude="**/temp/**" --in=src --out=dist
+
+# Exclude specific file types
+bodykit --build=all --exclude="**/*.backup" --in=src --out=dist
+
+# Exclude directories by name
+bodykit --build=all --exclude="node_modules/**" --in=src --out=dist
+```
+
+### Configuration File
+
+For more complex exclusion rules, use the package.json configuration:
+
+```json
+{
+  "config": {
+    "bodykit": {
+      "exclude": [
+        "**/temp/**",
+        "**/*.backup",
+        "**/node_modules/**",
+        "drafts/**"
+      ]
+    }
+  }
+}
+```
+
+### Asset-Specific Exclusions
+
+You can also configure exclusions for specific asset types:
+
+```json
+{
+  "config": {
+    "bodykit": {
+      "exclude": "**/global-exclude/**",
+      "js": {
+        "exclude": "assets/js/excluded/**"
+      },
+      "css": {
+        "exclude": [
+          "**/*.draft.css",
+          "temp/**"
+        ]
+      }
+    }
+  }
+}
+```
+
+### Exclusion Pattern Examples
+
+- `**/temp/**` - Excludes all temp directories and their contents
+- `**/*.backup` - Excludes all .backup files
+- `drafts/**` - Excludes everything in the drafts directory
+- `**/exclude/*` - Excludes files directly in any exclude directory
+- `test-*/**` - Excludes directories starting with "test-"
+
+### How Exclusions Work
+
+1. **Global exclusions** apply to all file processing
+2. **Asset-specific exclusions** apply only when processing that asset type
+3. **Patterns are cumulative** - files matching any exclusion pattern are skipped
+4. **Built-in exclusions** automatically skip:
+   - Files starting with `.` or `_`
+   - Files ending with `~`
+   - Files ending with `.min` (before extension)
+
+The exclusion system uses [minimatch](https://github.com/isaacs/minimatch) for pattern matching, supporting standard glob syntax.
+
 ## What Bodykit handles
 
 Bodykit ships with a pragmatic toolchain, so you can expect:
@@ -117,7 +210,7 @@ Exact behavior depends on your project layout and flags. Use --help to see the c
 
 ## Browsers support
 
-Bodykit respects your project’s Browserslist configuration. Add one to package.json or a .browserslistrc to control CSS/JS transforms:
+Bodykit respects your project's Browserslist configuration. Add one to package.json or a .browserslistrc to control CSS/JS transforms:
 
 ```json
 {
@@ -333,4 +426,3 @@ If a specific template isn't found, the system falls back to `templates/default.
 ## Complete Example
 
 See **test/assets/in** for a complete usage example.
-
