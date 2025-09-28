@@ -5,6 +5,12 @@ import express from "express";
 import path from "path";
 import { existsSync as fileExists, readFileSync as readFile } from "fs";
 
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 export default class Listener {
 	constructor( serverRoot ) {
 		this.serverRoot = serverRoot;
@@ -32,7 +38,7 @@ export default class Listener {
 		if ( requestUrl.pathname === '/bodykit.js' ) {
 			resource.set( 'Content-Type', 'application/javascript' );
 
-			return resource.sendFile( globalSettings.cwd + '/sync-listener.js');
+			return resource.sendFile( __dirname + '/sync-listener.js');
 		}
 		if ( filePath.endsWith('.html') || fileExists( path.join( filePath, 'index.html' ) ) ) {
 			if ( ! filePath.endsWith( '.html' ) ) {
