@@ -8,7 +8,8 @@
     "bodykit": "./main.js"
   },
   "scripts": {
-    "test": "node main.js --build=all --in=test-assets/in --out=test-assets/out"
+    "test:separate-dirs": "node main.js --build=all --in=test-assets/in --out=test-assets/out",
+    "test:same-dirs": "node main.js --build=all --in=test-assets/in"
   },
   "dependencies": {
     "browserslist": "^4.23.0",

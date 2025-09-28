@@ -21,7 +21,9 @@ async function recurseDirectoryForCompile( props ) {
 		if ( fs.existsSync( outputPath ) && sourcePath !== outputPath ) {
 			fs.rmSync( outputPath, { recursive: true } );
 		}
-		fs.mkdirSync( outputPath );
+		if ( ! fs.existsSync( outputPath ) ) {
+			fs.mkdirSync( outputPath, { recursive: true } );
+		}
 
 		fs.readdirSync( sourcePath ).forEach( async file => {
 
@@ -29,7 +31,16 @@ async function recurseDirectoryForCompile( props ) {
 				return;
 			}
 
-			if ( path.basename( file ).endsWith( '.min' ) ) {
+			const fileStats = fs.lstatSync( path.join( sourcePath, file ) );
+			if ( fileStats.isDirectory() ) {
+				await recurseDirectoryForCompile( {
+					...props,
+					subfolder: path.join( props.subfolder, file ),
+				} );
+				return;
+			}
+
+			if ( path.basename( file, path.extname( file ) ).endsWith( '.min' ) ) {
 				return;
 			}
 
@@ -97,7 +108,7 @@ export async function js( sourceIn, destOut ) {
 		destOut,
 		subfolder: 'js',
 		allowedExtensions: [ '.js' ],
-		callback: async ( { fileName, filePath, outputPath } ) => {
+		callback: async ( { filePath, outputPath } ) => {
 
 			const build = await esbuild.build( {
 				bundle: true,
