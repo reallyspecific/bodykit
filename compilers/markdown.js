@@ -126,6 +126,11 @@ export default class MarkdownCompiler extends Compiler {
 			}
 
 			const relPath = path.join(relDir, file);
+
+			if ( this.matchExcludedPath( path.join( relDir, file ) ) ) {
+				continue;
+			}
+
 			const sourceFile = path.join(this.sourceIn, relDir, file);
 			const fileUrl = new URL(relPath, globalSettings.rootUrl);
 			const fileProps = fileStat(sourceFile);

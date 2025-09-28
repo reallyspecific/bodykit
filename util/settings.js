@@ -17,7 +17,7 @@ export const globalSettings = {
 	host:      'localhost',
 	port:      8080,
 	socket:    8081,
-	replace:   false,
+	replace:   null,
 	rootUrl:   'http://localhost:8080',
 	serve:     '',
 	filenames: false,
@@ -116,28 +116,31 @@ export function parseSettings( cwd ) {
 	}
 
 	const newSettings = {
-		build:          values.build || null,
-		watch:          values.run || values.watch || null,
-		run:            values.run || null,
-		sourceIn:       path.join( cwd, values.in || 'source' ),
-		destOut:        path.join( cwd, values.out || 'public' ),
+		build:          values.build ?? null,
+		watch:          values.run ?? values.watch ?? null,
+		run:            values.run ?? null,
+		sourceIn:       path.join( cwd, values.in ?? 'source' ),
+		destOut:        path.join( cwd, values.out ?? 'public' ),
 		exclude:        values.exclude ?? [],
-		replace:        values.replace || null,
 		rootUrl:        values.url || null,
+		replace:        values.replace ?? null,
 		filenames:      values.filenames || null,
-		host:           values.host || null,
-		port:           values.port || 8080,
-		socket:         values.port || 8081,
+		host:           values.host ?? null,
+		port:           values.port ?? 8080,
+		socket:         values.port ?? 8081,
 		serve:          values.serve ? path.join( cwd, values.serve ) : '',
 		targetBrowsers: values.targetBrowsers || null,
-		cssOptions:     values.css || [],
-		jsOptions:      values.js || [],
-		fontOptions:    values.font || [],
+		cssOptions:     values.css ?? [],
+		jsOptions:      values.js ?? [],
+		fontOptions:    values.font ?? [],
 		mode:           values.debug ? 'debug' : 'production',
 		phpVersion:     !! values.versioning,
 	};
 	if ( typeof newSettings.exclude === 'string' ) {
 		newSettings.exclude = [ newSettings.exclude ];
+	}
+	if ( newSettings.replace === null ) {
+		newSettings.replace = ( newSettings.sourceIn !== newSettings.destOut );
 	}
 
 	for ( const key in newSettings ) {
