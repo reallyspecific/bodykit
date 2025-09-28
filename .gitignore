@@ -136,3 +136,5 @@ dist
 test-assets/out
 test-assets/in/**/*.min.*
 
+_modules
+
