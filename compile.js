@@ -7,8 +7,6 @@ import util from './util.js';
 import fs from 'fs';
 import path from 'path';
 
-import { subset } from '@web-alchemy/fonttools';
-
 async function recurseDirectoryForCompile( props ) {
 
 	const sourcePath = path.join( props.sourceIn, props.subfolder ?? '' );
@@ -57,8 +55,8 @@ async function recurseDirectoryForCompile( props ) {
 			} );
 
 			if ( compiledFiles ) {
-				compiledFiles.forEach( compiled => {
-					fs.writeFileSync( path.join( outputPath, compiled.filename ), compiled.contents );
+				compiledFiles.forEach( file => {
+					fs.writeFileSync( path.join( outputPath, file.filename ), file.contents );
 				} );
 			}
 
@@ -103,7 +101,7 @@ export async function css( sourceIn, destOut, targetBrowsers ) {
 
 }
 
-export async function js( sourceIn, destOut ) {
+export async function js( sourceIn, destOut, targetBrowsers ) {
 
 	return recurseDirectoryForCompile( {
 		sourceIn,
@@ -166,13 +164,13 @@ export function fonts( sourceIn, destOut, args ) {
 
 }
 
-export function all( sourceIn, destOut, { targetBrowsers, fontArgs } ) {
+export function all( sourceIn, destOut, targetBrowsers ) {
 
 	const promises = [];
 
 	promises.push( css( sourceIn, destOut, targetBrowsers ) );
 	promises.push( js( sourceIn, destOut, targetBrowsers ) );
-	promises.push( fonts( sourceIn, destOut, fontArgs ) );
+	promises.push( fonts( sourceIn, destOut, targetBrowsers ) );
 
 	util.bumpVersion( destOut );
 
