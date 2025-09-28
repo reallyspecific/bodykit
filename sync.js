@@ -46,6 +46,7 @@ const getPageContent = async ( tab, host, port = 3000, socket = 3001, path = '/'
 			const url = new URL( link.href );
 			url.hostname = 'localhost';
 			url.port = port;
+			url.protocol = 'http';
 			link.href = url.toString();
 		}, port );
 	}
