@@ -1,46 +1,83 @@
 import path from "path";
-import { existsSync as fileExists, readFileSync as readFile } from "fs";
+import {
+	existsSync as fileExists,
+	readFileSync as readFile,
+	readdirSync as readDir,
+} from "fs";
 import minimistString from "minimist-string";
 import {globalSettings} from "../util/settings.js";
 import tagProcessors from './tags.js';
 import markdownit from "markdown-it";
+import {makeSlug} from "../util/formatting.js";
 
 export default class Template {
+
+	static templates = null;
 
 	constructor( props ) {
 		this.templateContents = props.templateContents;
 		this.type = props.type ?? 'default';
+
+		if ( ! Template.templates ) {
+			Template.collectTemplates();
+		}
 	}
 
-	static getTemplateContents( type ) {
-		const templatePath = path.join( globalSettings.sourceIn, '_templates', `${type}.html` );
+	static collectTemplates() {
+		Template.templates = {};
+		const templatePath = globalSettings.sourceIn;
+		const files = readDir( templatePath, { encoding: 'utf-8', recursive: true } );
+		files.forEach( file => {
+			if ( file.endsWith( '.html' ) ) {
+				const absPath = path.join( templatePath, file );
+				const relPath = path.relative( templatePath, absPath );
+				const name = relPath.replace( 'templates/', '' ).replace('.html','');
+				const slug = makeSlug( name );
+				Template.templates[slug] = {
+					name,
+					path: relPath,
+					source: absPath,
+					contents: Template.getTemplateContents( relPath ),
+				};
+			}
+		}
+		)
+	}
+
+	static getTemplate( slug, useDefault = true ) {
+		if ( ! Template.templates ) {
+			Template.collectTemplates();
+		}
+		const template = Template.templates[slug];
+		if ( ! template && useDefault ) {
+			return Template.templates.default;
+		}
+		return template;
+	}
+
+	static getTemplateContents( relPath ) {
+		const templatePath = path.join( globalSettings.sourceIn, relPath );
 		if ( ! fileExists( templatePath ) ) {
 			return false;
 		}
 		return readFile( templatePath, { encoding: 'utf-8' } );
 	}
 
-	static async new( type, useDefault = true ) {
+	static async new( slug, useDefault = true ) {
 
-		const sourceIn = globalSettings.sourceIn;
-
-		let template = this.getTemplateContents( type );
+		if ( ! Template.templates ) {
+			Template.collectTemplates();
+		}
+		let template = Template.getTemplate( slug, useDefault );
 		if ( ! template ) {
-			if ( ! useDefault ) {
-				throw ReferenceError(`Template "${type}" does not exist`);
-			}
-			template = this.getTemplateContents( 'default' );
+			throw ReferenceError( `Could not retrieve "${slug}" template` );
 		}
 
-		if ( ! template ) {
-			throw Error( `Could not retrieve "${type}" template or default.html: ${error.message}` );
-		}
-
-		return new Template( { templateContents: template, type } );
+		return new Template( { templateContents: template.contents, slug } );
 
 	}
 
-	async render( node ) {
+	async render( node, compiler = null ) {
 
 		let renderedContents = this.templateContents + '';
 
@@ -53,13 +90,13 @@ export default class Template {
 			const name = args._.shift().toLowerCase();
 			args.name = name;
 
-			const renderedTag = await Template.processTag( name, args, node );
+			const renderedTag = await this.processTag( name, args, node, compiler );
 
 			renderedContents = renderedContents.replaceAll( tag, renderedTag );
 
 		}
 
-		markdownit().render( renderedContents );
+		markdownit({html:true}).render( renderedContents );
 
 		// minify here probably
 
@@ -67,11 +104,11 @@ export default class Template {
 
 	}
 
-	static async processTag( tagName, tagArgs, node ) {
+	async processTag( tagName, tagArgs, node, compiler = null ) {
 
 		try {
 			const processor = tagProcessors[tagName] ?? tagProcessors.tag;
-			const replacement = await processor( node, tagArgs );
+			const replacement = await processor( node, tagArgs, compiler, this );
 			if ( typeof replacement === 'string' ) {
 				return replacement;
 			}

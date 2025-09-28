@@ -31,8 +31,15 @@ export default class FontCompiler extends Compiler {
 				'unicodes': buildOptions.unicodes ?? unicodes,
 				'flavor': buildOptions.outputType ?? 'woff2',
 			});
+			const fontFileName = path.basename(filePath, path.extname(filePath)) + '.woff2';
+			const relPath = path.relative( this.sourceIn, path.dirname( filePath ) );
+			this.collection.push( {
+				destPath: path.join( this.destOut, relPath, fontFileName ),
+				relPath: path.join( relPath, fontFileName ),
+				filename: fontFileName,
+			} );
 			return [{
-				filename: path.basename(filePath, path.extname(filePath)) + '.woff2',
+				filename: fontFileName,
 				contents: outputFileBuffer
 			}];
 		} catch( error ) {

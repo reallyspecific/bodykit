@@ -10,10 +10,15 @@ export const globalSettings = {
 	build:     'all',
 	watch:     false,
 	run:       false,
+	cwd:       process.cwd(),
 	sourceIn:  path.join( process.cwd(), 'source' ),
 	destOut:   path.join( process.cwd(), 'dist' ),
+	host:      'localhost',
+	port:      8080,
+	socket:    8081,
 	replace:   false,
 	rootUrl:   'http://localhost:8080',
+	serve:     '',
 	filenames: false,
 	locale:    'en-US',
 	env:       'production',
@@ -69,6 +74,9 @@ export function parseSettings( cwd ) {
 				type:  'string',
 				short: 'p'
 			},
+			serve: {
+				type:  'string',
+			},
 			targetBrowsers: {
 				type:  'string'
 			},
@@ -108,8 +116,9 @@ export function parseSettings( cwd ) {
 		rootUrl:        values.url || null,
 		filenames:      values.filenames || null,
 		host:           values.host || null,
-		port:           values.port || 3000,
-		socket:         values.port || 3001,
+		port:           values.port || 8080,
+		socket:         values.port || 8081,
+		serve:          values.serve ? path.join( cwd, values.serve ) : '',
 		targetBrowsers: values.targetBrowsers || null,
 		cssOptions:     values.css || [],
 		jsOptions:      values.js || [],
