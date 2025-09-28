@@ -29,6 +29,7 @@ export const globalSettings = {
 	env:        'production',
 	compilers:  [ 'css', 'js', 'md' ],
 	targets:    null,
+    publicOut:  '.',
 };
 
 export function getSetting(key) {
@@ -106,7 +107,10 @@ export async function parseSettings( cwd ) {
 			},
 			plugins: {
 				type: 'string'
-			}
+			},
+            publicOut: {
+                type: 'string',
+            }
 		},
 		tokens: true
 	} );
@@ -151,8 +155,9 @@ export async function parseSettings( cwd ) {
 		mode:            values.debug ? 'debug' : 'production',
 		versioning:      values.versioning ?? false,
 		package:         packageFile ?? null,
-		compilers:       values.plugins ?? ['css','js','md'],
+		compilers:       values.plugins ?? ['css','js','md','svg'],
 		config:          values.config,
+        publicOut:       values.publicOut ?? '.',
 	};
 	if ( typeof newSettings.exclude === 'string' ) {
 		newSettings.exclude = [ newSettings.exclude ];

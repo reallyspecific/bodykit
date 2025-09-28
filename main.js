@@ -12,6 +12,7 @@ import Compiler from "./util/compiler.js";
 import CSSCompiler from "./compilers/css.js";
 import MarkdownCompiler from "./compilers/markdown.js";
 import JSCompiler from "./compilers/js.js";
+import SVGCompiler from "./compilers/svg.js";
 
 import {getSetting, parseSettings} from "./util/settings.js";
 import {cleanFolder} from "./util/files.js";
@@ -29,6 +30,7 @@ const build = async ( what ) => {
 		cleanFolder( clean, getSetting('destOut') );
 	}
 
+	const versioning = getSetting('versioning');
 	const compiled = {};
 	const compilers = Compiler.get(what);
 	for( const compiler of compilers ) {
@@ -39,16 +41,15 @@ const build = async ( what ) => {
 		if ( files ) {
 			files.forEach( file => {
 				if ( file.version ) {
-					let path = file.filepath;
-					if ( path.startsWith( '/' ) ) {
-						path = path.slice( 1 );
+					let filepath = path.relative( compiler.destOut, file.out );
+					if ( filepath.startsWith( '/' ) ) {
+						filepath = filepath.slice( 1 );
 					}
-					compiled[path] = file.version;
+					compiled[filepath] = file.version;
 				}
 			} );
 		}
 	}
-	const versioning = getSetting('versioning');
 	if ( versioning ) {
 		let version = {};
 		const versionFile = typeof versioning === 'string' ? path.join( process.cwd(), versioning ) : path.join( getSetting('destOut'), 'version.json' );
@@ -103,7 +104,7 @@ async function main() {
 			targets:  props.targets,
 			...props.config?.[compiler] ?? {},
 		};
-
+		let ModuleCompiler = null;
 		switch( compiler ) {
 			case 'css':
 				Compiler.register( CSSCompiler, props.config?.css ?? {} );
@@ -114,9 +115,11 @@ async function main() {
 			case 'md':
 				Compiler.register( MarkdownCompiler, props.config?.md ?? {} );
 				break;
+			case 'svg':
+				Compiler.register( SVGCompiler, props.config?.svg ?? {} );
+				break;
 			case 'fonts':
 			case 'scss':
-				let ModuleCompiler = null;
 				let modulePath = `@reallyspecific/bodykit-${compiler}`;
 				if ( fileExists( path.join( __dirname, `_modules/${compiler}/main.js` ) ) ) {
 					modulePath = path.join( __dirname, `_modules/${compiler}/main.js` );
@@ -131,6 +134,7 @@ async function main() {
 				}
 				break;
 			default:
+
 				try {
 					ModuleCompiler = ( await import(compiler) ).default;
 				} catch( error ) {

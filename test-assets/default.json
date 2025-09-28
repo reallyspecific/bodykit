@@ -5,6 +5,7 @@
   "clean": true,
   "in": "test-assets/in",
   "out": "test-assets/out",
+  "filename": "[path:0]/path/[name].[ext]",
   "js": {
     "exclude": "**/excluded/**"
   }

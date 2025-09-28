@@ -23,7 +23,7 @@ export default class Compiler {
 
 	options = {};
 
-	filenamePattern = getSetting('filename');
+	filenamePattern = getSetting('filenamePattern');
 	include = ['*'];
 
 	sourceIn = getSetting('sourceIn');
@@ -37,6 +37,8 @@ export default class Compiler {
 
 	collection = new Set();
 	props = {};
+
+    publicOut = getSetting('publicOut');
 
 	constructor( buildOptions, props ) {
 		if ( buildOptions ) {
@@ -125,11 +127,11 @@ export default class Compiler {
 		if ( typeof pattern === 'function' ) {
 			outputPath = pattern( { path, basename, ext, tree: pathParts } );
 		}
-		outputPath = outputPath.replaceAll( '[path]', pathParts.join('/').toLowerCase() ?? '' );
+		outputPath = outputPath.replaceAll( '[path]', pathParts.join('/').toLowerCase().replaceAll('_','-') ?? '' );
 		if ( pathParts.length ) {
-			outputPath = outputPath.replaceAll('[path:last]', getSetting('rootUrl') );
+			outputPath = outputPath.replaceAll('[path:last]', pathParts[ pathParts.length - 1 ].toLowerCase().replaceAll('_','-') ?? '' );
 			for ( const partIndex in pathParts ) {
-				outputPath = outputPath.replaceAll(`[path:${partIndex}]`, pathParts[partIndex].toLowerCase() );
+				outputPath = outputPath.replaceAll(`[path:${partIndex}]`, pathParts[partIndex].toLowerCase().replaceAll('_','-') );
 			}
 		}
 		outputPath = outputPath.replaceAll( '[name]', basename );

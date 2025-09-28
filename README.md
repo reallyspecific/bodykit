@@ -9,7 +9,7 @@ A small, fast CLI for building web assets without a ton of overhead or framework
 
 ## Requirements
 
-- A recent Node.js v18 or higher
+- A recent Node.js v22 or higher
 - Yarn for package management (recommended)
 
 ## Installation
@@ -17,7 +17,6 @@ A small, fast CLI for building web assets without a ton of overhead or framework
 Install as a dev dependency in your project:
 
 ```shell script
-bash
 yarn add -D @reallyspecific/bodykit
 ```
 
@@ -28,7 +27,6 @@ This exposes the bodykit binary in your project's node_modules/.bin.
 Build everything in one go:
 
 ```shell script
-bash
 bodykit --build=all --in=./src --out=./dist
 ```
 
@@ -36,7 +34,6 @@ bodykit --build=all --in=./src --out=./dist
 Watch for changes and rebuild automatically:
 
 ```shell script
-bash
 bodykit --watch --in=./src
 ```
 
@@ -56,7 +53,6 @@ Tip: Add scripts to your package.json for convenience.
 Run them with:
 
 ```shell script
-bash
 yarn build
 # or
 yarn watch
@@ -137,7 +133,6 @@ Bodykit provides flexible file exclusion capabilities through glob patterns. Fil
 Use the `--exclude` flag to exclude files from a single pattern:
 
 ```shell script
-bash
 # Exclude all files in any temp directory
 bodykit --build=all --exclude="**/temp/**" --in=src --out=dist
 
