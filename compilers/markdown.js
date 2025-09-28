@@ -17,6 +17,8 @@ export default class MarkdownCompiler extends Compiler {
 	copy = [ '*.ico', '*.gif', '*.jpg', '*.jpeg', '*.webp', '*.png', '*.svg' ];
 	useFilenames = false;
 
+	clean = ['*.html'];
+
 	filenamePattern = ( { basename } ) => {
 		if ( this.useFilenames || basename === 'index' ) {
 			return '[path]/[name].html';
@@ -66,6 +68,7 @@ export default class MarkdownCompiler extends Compiler {
 				toWrite.push(props);
 				continue;
 			}
+
 			if (props.ext !== '.md' && this.match(props.filename, this.copy)) {
 				toWrite.push({...props, copy: true});
 				continue;

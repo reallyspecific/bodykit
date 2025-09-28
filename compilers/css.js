@@ -14,6 +14,8 @@ export default class CSSCompiler extends Compiler {
 	queryRules = new Map();
 	env = [];
 
+	clean = ['*.css','*.css.map'];
+
 	customRules = {
 		mixin: {
 			prelude: '<custom-ident>',
@@ -78,7 +80,7 @@ export default class CSSCompiler extends Compiler {
 				contents: results.code,
 			},{
 				...props,
-				out: props.in + '.map',
+				out: props.out + '.map',
 				filename: props.filename + '.map',
 				ext: '.map',
 				contents: results.map,

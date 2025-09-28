@@ -11,6 +11,8 @@ export default class JSCompiler extends Compiler {
 	include = [ '*.js' ];
 	filename = '[path]/[name].min.js';
 
+	clean = [ '*.js', '*.js.map' ];
+
 	async build( props ) {
 
 		const build = await esbuild.build( {
