@@ -8,7 +8,7 @@ export default class CSSCompiler extends Compiler {
 	static type = 'css';
 
 	include = ['*.css'];
-	filename = '[path]/[name].css';
+	filenamePattern = '[path]/[name].css';
 
 	mixins = new Map();
 	queryRules = new Map();

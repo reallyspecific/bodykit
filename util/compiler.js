@@ -102,7 +102,7 @@ export default class Compiler {
 			}
 		}
 		const found = new Set();
-		for ( const included in include ) {
+		for ( const included of include ) {
 			glob( path.join( absPath, '**/' + included ), { recursive:true, withFileTypes: true } ).forEach( file => {
 				found.add( file );
 			} );
@@ -111,14 +111,14 @@ export default class Compiler {
 
 	}
 
-	out( path, basename, ext ) {
+	out( path, basename, ext, pattern = this.filenamePattern ) {
 		let pathParts = path ? path.split( '/' ) : [];
 		while ( pathParts.length && ( pathParts[0] === '.' || pathParts[0] === '..' || pathParts[0] === '' ) ) {
 			pathParts.shift();
 		}
-		let outputPath = this.filenamePattern;
-		if ( typeof this.filenamePattern === 'function' ) {
-			outputPath = this.filenamePattern( { path, basename, ext, tree: pathParts } );
+		let outputPath = pattern;
+		if ( typeof pattern === 'function' ) {
+			outputPath = pattern( { path, basename, ext, tree: pathParts } );
 		}
 		outputPath = outputPath.replaceAll( '[path]', pathParts.join('/').toLowerCase() ?? '' );
 		if ( pathParts.length ) {
@@ -142,7 +142,8 @@ export default class Compiler {
 
 		this.collection = new Set();
 		return this.walkDirectory( {
-			in: './',
+			rootPath: this.sourceIn,
+			in: '',
 			build: this.build.bind(this),
 			write: this.write.bind(this),
 		} );
@@ -194,7 +195,7 @@ export default class Compiler {
 			if ( file.isDirectory() || ! this.match( file.name, props.include ?? this.include ) || this.match( file.name, props.ignore ?? this.ignore ) ) {
 				continue;
 			}
-			let filepath = path.relative( this.sourceIn, file.fullpath() );
+			let filepath = path.relative( props.rootPath ?? this.sourceIn, file.fullpath() );
 			if ( this.match( filepath, props.exclude ?? this.exclude ) ) {
 				continue;
 			}

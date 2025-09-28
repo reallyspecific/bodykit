@@ -9,7 +9,7 @@ export default class JSCompiler extends Compiler {
 	static type = 'js';
 
 	include = [ '*.js' ];
-	filename = '[path]/[name].min.js';
+	filenamePattern = '[path]/[name].min.js';
 
 	clean = [ '*.js', '*.js.map' ];
 
