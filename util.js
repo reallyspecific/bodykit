@@ -66,6 +66,10 @@ export function parseSettings( cwd ) {
 			},
 			targetBrowsers: {
 				type:  'string'
+			},
+			debug: {
+				type:  'boolean',
+				short: 'd'
 			}
 		},
 		tokens: true
@@ -102,9 +106,10 @@ export function parseSettings( cwd ) {
 		port:           values.port || 3000,
 		socket:         values.port || 3001,
 		targetBrowsers: values.targetBrowsers || null,
-		bundleArgs:     values.cssArgs || [],
-		buildArgs:      values.jsArgs || [],
-		subsetArgs:     values.fontArgs || [],
+		cssOptions:     values.css || [],
+		jsOptions:      values.js || [],
+		fontOptions:    values.font || [],
+		mode:           values.debug ? 'debug' : 'production',
 	};
 
 	for ( const key in newSettings ) {
