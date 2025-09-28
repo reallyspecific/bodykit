@@ -63,6 +63,9 @@ export function parseSettings( cwd ) {
 			port: {
 				type:  'string',
 				short: 'p'
+			},
+			targetBrowsers: {
+				type:  'string'
 			}
 		},
 		tokens: true
@@ -76,18 +79,29 @@ export function parseSettings( cwd ) {
 		}
 	}
 
+	const packageFile = fs.readFileSync( path.join( process.cwd(), 'package.json' ) );
+	if ( packageFile ) {
+		const packageSettings = JSON.parse( packageFile );
+		if ( packageSettings && ( packageSettings.config?.bodykit ?? false ) ) {
+			for ( let key in packageSettings.config.bodykit ) {
+				values[key] = packageSettings.config.bodykit[ key ];
+			}
+		}
+	}
+
 	const newSettings = {
-		build:     values.build || null,
-		watch:     values.run || values.watch || null,
-		run:       values.run || null,
-		sourceIn:  path.join( cwd, values.in || 'source' ),
-		destOut:   path.join( cwd, values.out || values.in || 'dist' ),
-		replace:   values.replace || null,
-		rootUrl:   values.url || null,
-		filenames: values.filenames || null,
-		host:      values.host || null,
-		port:      values.port || 3000,
-		socket:    values.port || 3001
+		build:          values.build || null,
+		watch:          values.run || values.watch || null,
+		run:            values.run || null,
+		sourceIn:       path.join( cwd, values.in || 'source' ),
+		destOut:        path.join( cwd, values.out || values.in || 'dist' ),
+		replace:        values.replace || null,
+		rootUrl:        values.url || null,
+		filenames:      values.filenames || null,
+		host:           values.host || null,
+		port:           values.port || 3000,
+		socket:         values.port || 3001,
+		targetBrowsers: values.targetBrowsers || null,
 	};
 
 	for ( const key in newSettings ) {

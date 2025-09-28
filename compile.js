@@ -68,9 +68,9 @@ async function recurseDirectoryForCompile( props ) {
 
 }
 
-export async function css( sourceIn, destOut ) {
+export async function css( sourceIn, destOut, targetBrowsers ) {
 
-	const targets = browserslistToTargets( browserslist('>= 1%') );
+	const targets = browserslistToTargets( browserslist( targetBrowsers || '>= 1%' ) );
 
 	return await recurseDirectoryForCompile( {
 		sourceIn,
