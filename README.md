@@ -127,3 +127,210 @@ Bodykit respects your project’s Browserslist configuration. Add one to package
   ]
 }
 ```
+
+## Templating
+
+# Bodykit Templating Engine
+
+Bodykit includes a flexible templating engine that supports two types of template tags: **{@} template tags** for complex operations and **@@ shorttags** for simple variable interpolation.
+
+## {@} Template Tags
+
+Template tags use curly braces with an @ symbol and provide advanced functionality like content inclusion, asset management, and loops.
+
+### Basic Syntax
+
+```html
+{@tagname attribute="value" /}
+```
+
+For tags with content:
+
+```html
+{@tagname attribute="value"}
+  content here
+{/}
+```
+
+### Available Template Tags
+
+#### {@asset}
+
+Generates HTML tags for CSS and JavaScript assets with automatic versioning.
+
+**Required attributes:**
+- `type` - Asset type: `"css"` or `"js"`
+
+**Optional attributes:**
+- `name` - Asset name (looks for compiled assets)
+- `path` - Direct asset path
+- `version` - Custom version parameter
+- `optional` - If true, won't throw error if asset missing
+
+**Examples:**
+
+```html
+{@asset type="css" name="default" /}
+<!-- Outputs: <link type="text/css" rel="stylesheet" href="/path/to/default.min.css?v=abc123" id="default-css"> -->
+
+{@asset type="js" path="/scripts/app.js" /}
+<!-- Outputs: <script type="text/javascript" src="/scripts/app.js?v=abc123" id="app-js">/* empty */</script> -->
+
+{@asset type="css" name="theme" optional="true" /}
+<!-- Won't error if theme.min.css doesn't exist -->
+```
+
+#### {@content}
+
+Renders content using a specified template or processes the current node's content through Markdown.
+
+**Optional attributes:**
+- `template` - Template to use for rendering
+
+**Examples:**
+
+```html
+{@content template="page/body" /}
+<!-- Renders current content using the page/body template -->
+
+{@content /}
+<!-- Renders current node's content through Markdown processor -->
+```
+
+#### {@template}
+
+Includes another template by name.
+
+**Required attributes:**
+- `name` - Template name to include
+
+**Example:**
+
+```html
+{@template name="head-global" /}
+<!-- Includes the head-global template -->
+```
+
+#### {@loop}
+
+Iterates over content items with filtering and templating.
+
+**Optional attributes:**
+- `type` - Content type to filter by
+- `max` - Maximum number of items
+- `template` - Template to use for each item
+
+**Example:**
+
+```html
+{@loop type="blog" max="3" template="blog-excerpt" /}
+<!-- Loops through up to 3 blog items, rendering each with blog-excerpt template -->
+```
+
+#### {@echo}
+
+Outputs dynamic content or variables.
+
+**Example:**
+
+```html
+{@echo content="Hello World" /}
+```
+
+### Template Tag Error Handling
+
+Template tags provide detailed error messages with file locations:
+
+```html
+<!-- This will throw: Missing type for @asset tag at index.html:15 -->
+{@asset name="styles" /}
+
+<!-- This will throw: Could not find template: missing-template at index.html:23 -->
+{@content template="missing-template" /}
+```
+
+## @@ Shorttags
+
+Shorttags provide a concise way to insert variables and formatted content using double @ symbols.
+
+### Basic Syntax
+
+```html
+@@type:variable:format
+```
+
+- `type` - Variable type (e.g., page, site, meta)
+- `variable` - Variable name
+- `format` - Optional formatting (e.g., date format)
+
+### Examples
+
+```html
+<!-- Page/node variables -->
+@@node:url
+
+<!-- Global variables -->
+@@global:url
+
+<!-- Meta variables of currently parsed node -->
+@@meta:description
+@@meta:keywords
+@@meta:title
+@@meta:slug
+@@meta:timestamp:Y-m-d
+```
+
+
+### Common Use Cases
+
+**Page metadata:**
+```html
+<title>@@meta:title - Website Title</title>
+<meta name="description" content="@@meta:description">
+```
+
+
+**Formatted dates:**
+```html
+<time datetime="@@meta:timestamp:c">{@echo meta="timestamp" format="F j, Y" /}</time>
+```
+
+
+**Content variables:**
+```html
+<h1>@@meta:title</h1>
+<p>Published on {@echo meta="timestamp" format="F j, Y" /}</p>
+```
+
+
+## Template File Organization
+
+Templates are automatically collected from your source directory:
+
+```
+src/
+├── templates/
+│   ├── default.html        # Main page template
+│   ├── head-global.html    # Global head includes
+│   └── page/
+│       └── body.html       # Page body template
+└── content/
+    └── index.md
+```
+
+
+### Template Resolution
+
+Templates are referenced by their path relative to the `templates/` directory:
+
+- `templates/head-global.html` → `{@template name="head-global" /}`
+- `templates/page/body.html` → `{@content template="page/body" /}`
+
+### Default Template
+
+If a specific template isn't found, the system falls back to `templates/default.html`.
+
+## Complete Example
+
+See **test/assets/in** for a complete usage example.
+

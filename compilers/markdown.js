@@ -51,8 +51,6 @@ export default class MarkdownCompiler extends Compiler {
 		}
 		node.url.pathname = node.path;
 
-		node.sourceContents = markdownit({html:true}).render( node.sourceContents );
-
 		return node;
 
 	}
@@ -66,12 +64,12 @@ export default class MarkdownCompiler extends Compiler {
 				const template = await Template.new(compiled.type || 'page');
 				compiled.collection = this.collection;
 				compiled.contents = await template.render( compiled, this );
+				//compiled.contents = markdownit({html:true}).render( compiled.contents );
 				compiled = {
 					filename: compiled.path,
 					contents: compiled.contents,
 				};
 			} catch( error ) {
-				console.error( error );
 				compiled.error = {
 					type: 'TemplateError',
 					message: error.message,
@@ -82,13 +80,13 @@ export default class MarkdownCompiler extends Compiler {
 
 		await super.write( { ...compiled }, outputPath );
 
-		if ( compiled.type !== '@asset' && ! compiled.copy ) {
+		/*if ( compiled.type !== '@asset' && ! compiled.copy ) {
 			await minify({
 				compressor: htmlMinify,
 				input: path.join( outputPath, compiled.filename ),
 				output: path.join( outputPath, compiled.filename ),
 			});
-		}
+		}*/
 	}
 
 	async compile( props= {} ) {
@@ -147,6 +145,7 @@ export default class MarkdownCompiler extends Compiler {
 					type: node.type ?? 'page',
 					path: relPath,
 					filePath: path.join(this.sourceIn, relPath),
+					mtime: fileProps.mtime,
 					url: fileUrl,
 					...node,
 				});
@@ -158,6 +157,7 @@ export default class MarkdownCompiler extends Compiler {
 					filename: file,
 					filePath: path.join(this.sourceIn, relPath),
 					destPath: path.join(this.destOut, relPath),
+					mtime: fileProps.mtime,
 					url: fileUrl,
 					copy: (
 						this.buildOptions?.copyAssets ?? [ '.ico', '.gif', '.jpg', '.jpeg', '.webp', '.png', '.svg' ]

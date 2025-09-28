@@ -1,5 +1,7 @@
 import {stripHtml} from "string-strip-html";
 import markdownit from "markdown-it";
+import {globalSettings} from "./settings.js";
+import phpDate from "php-date";
 
 export function makeSlug( str ) {
 
@@ -52,6 +54,54 @@ export function makeExcerpt(content) {
 
 }
 
+export function getVar( type, name, attrs, node ) {
+	let value = null;
+	let format = 'string';
+	if ( type === 'meta' ) {
+		value = node.meta?.[name] ?? null;
+		switch( name ) {
+			case 'date':
+			case 'time':
+				value = new Date( value ?? node.mtime );
+				format = name;
+				break;
+		}
+	}
+	if ( type === 'node' ) {
+		value = node[name] ?? null;
+	}
+	if ( type === 'global' ) {
+		switch( name ) {
+			case 'now':
+				format = 'date';
+				value = new Date();
+				break;
+			case 'url':
+				value = globalSettings.rootUrl;
+				break;
+		}
+	}
+
+	switch( format ) {
+		case 'time':
+		case 'date':
+			if ( !! attrs.format ) {
+				value = phpDate( attrs.format, value );
+			} else {
+				value = format === 'time'
+					? value?.toLocaleTimeString( undefined, { hour: 'numeric', minute: 'numeric' } )
+					: value?.toLocaleDateString( undefined, { year: 'numeric', month: 'long', day: 'numeric' } );
+			}
+			break;
+	}
+
+	if ( ! value && attrs.default ) {
+		return attrs.default;
+	}
+
+	return value ?? '';
+
+}
 
 export function parseVars( stringTemplate, node, args = {} ) {
 

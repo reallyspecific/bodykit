@@ -4,4 +4,4 @@ title: test index
 
 # Test index
 
-<!--% LOOP --type=blog --template=blog-excerpt -->
+{@loop type="blog" max="3" template="blog-excerpt" /}

@@ -4,11 +4,11 @@ import {
 	readFileSync as readFile,
 	readdirSync as readDir,
 } from "fs";
-import minimistString from "minimist-string";
+import parseAttrs from "attributes-parser";
 import {globalSettings} from "../util/settings.js";
 import tagProcessors from './tags.js';
-import markdownit from "markdown-it";
-import {makeSlug} from "../util/formatting.js";
+import {makeSlug,getVar} from "../util/formatting.js";
+
 
 export default class Template {
 
@@ -70,7 +70,7 @@ export default class Template {
 		}
 		let template = Template.getTemplate( slug, useDefault );
 		if ( ! template ) {
-			throw ReferenceError( `Could not retrieve "${slug}" template` );
+			throw ReferenceError( `Could not retrieve [${slug}] template` );
 		}
 
 		return new Template( { templateContents: template.contents, slug } );
@@ -81,30 +81,59 @@ export default class Template {
 
 		let renderedContents = this.templateContents + '';
 
-		const matched = renderedContents.matchAll( /<!--%\s(.*?)\s*-->/gi );
+		const tagMatch = /\{@([a-z]+)(.*?)(\/?)}/gi
 
-		for ( const tagMatch of matched ) {
+		const matches = [];
+		let tag;
+		while( ( tag = tagMatch.exec( renderedContents ) ) !== null ) {
+			matches.push( {
+				index: tag.index,
+				file: path.relative( globalSettings.destOut, node.filePath ),
+				replaces: tag[0],
+				tag: tag[1],
+				attrs: parseAttrs( tag[2] ),
+				isClosed: tag[3] === '/',
+			} );
+		}
+		for( let i = matches.length - 1; i >= 0; i-- ) {
+			const match = matches[i];
+			if ( ! match.isClosed ) {
+				const closingTag = renderedContents.indexOf( '{/}', match.index + match.replaces.length );
+				if ( closingTag === -1 ) {
+					throw SyntaxError( `Unclosed tag: ${match.replaces} at ${match.file}:${match.index}` );
+				}
+				const alreadyClosed = matches.filter( match => match.closingIndex === closingTag + 3 );
+				if ( alreadyClosed.length > 0 ) {
+					throw SyntaxError( `Unclosed tag: ${match.replaces} at ${match.file}:${match.index}` );
+				}
+				match.closingIndex = closingTag + 3;
+				match.content = renderedContents.slice( match.index + match.match.length, closingTag );
+				match.replaces = renderedContents.slice( match.index, closingTag + 3 );
+			}
+		}
 
-			const [ tag, tagContent ] = tagMatch;
-			const args = minimistString( tagContent );
-			const name = args._.shift().toLowerCase();
-			args.name = name;
+		for ( const tagMatch of matches ) {
 
-			const renderedTag = await this.processTag( name, args, node, compiler );
+			const renderedTag = await this.processTag( tagMatch, node, compiler );
 
-			renderedContents = renderedContents.replaceAll( tag, renderedTag );
+			renderedContents = renderedContents.replace( tagMatch.replaces, renderedTag );
 
 		}
+
+		renderedContents = this.processShortTags( renderedContents, node, compiler );
 
 		return renderedContents;
 
 	}
 
-	async processTag( tagName, tagArgs, node, compiler = null ) {
+	async processTag( tag, node, compiler = null ) {
 
 		try {
-			const processor = tagProcessors[tagName] ?? tagProcessors.tag;
-			const replacement = await processor( node, tagArgs, compiler, this );
+			const processor = tagProcessors[tag.tag] ?? false;
+			if ( ! processor ) {
+				throw SyntaxError( `Unknown tag: ${tag.tag}` );
+			}
+			const replacement = await processor( node, tag, compiler, this );
 			if ( typeof replacement === 'string' ) {
 				return replacement;
 			}
@@ -112,6 +141,24 @@ export default class Template {
 		} catch ( error ) {
 			throw error;
 		}
+
+	}
+
+	processShortTags( contents, node, compiler = null ) {
+
+
+		const shortTagMatch = /@@([a-z-_.:]+)/gi;
+		let processed = contents + '';
+		let shorttag;
+		while( ( shorttag = shortTagMatch.exec( processed ) ) !== null ) {
+			const properties = shorttag[1].split(':');
+			const varType = properties.shift();
+			const varName = properties.shift();
+			const replacement = getVar( varType, varName, { format: properties[0] ?? null }, node );
+			processed = processed.replace( shorttag[0], replacement );
+		}
+
+		return processed;
 
 	}
 
