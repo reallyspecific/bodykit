@@ -102,6 +102,9 @@ export function parseSettings( cwd ) {
 		port:           values.port || 3000,
 		socket:         values.port || 3001,
 		targetBrowsers: values.targetBrowsers || null,
+		bundleArgs:     values.cssArgs || [],
+		buildArgs:      values.jsArgs || [],
+		subsetArgs:     values.fontArgs || [],
 	};
 
 	for ( const key in newSettings ) {
