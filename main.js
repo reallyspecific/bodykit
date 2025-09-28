@@ -7,7 +7,6 @@ import readline from 'readline';
 import MarkdownCompiler from "./compilers/markdown.js";
 import JSCompiler from "./compilers/js.js";
 import CSSCompiler from "./compilers/css.js";
-import FontCompiler from "./compilers/fonts.js";
 import {bumpVersion, parseSettings} from "./util/settings.js";
 import Listener from "./server.js";
 
@@ -51,18 +50,22 @@ const build = async ( what ) => {
 		} );
 		await compilers['md'].compile();
 	}
-	if ( what === 'all' || what.includes('fonts') ) {
-		compilers['fonts'] = new FontCompiler({
-			sourceIn: runSettings.sourceIn,
-			destOut: runSettings.destOut,
-			buildOptions: {
-				...runSettings.fontOptions,
-				contentCollection: compilers.md?.collection,
-			},
-		} );
-		await compilers['fonts'].compile();
-	}
+	if ( what.includes('fonts') ) {
+		try {
+			const { FontCompiler } = await import("bodykit-fonts");
 
+			compilers['fonts'] = new FontCompiler({
+				sourceIn: runSettings.sourceIn,
+				destOut: runSettings.destOut,
+				buildOptions: runSettings.fontOptions,
+				compilers: compilers,
+			} );
+			await compilers['fonts'].compile();
+		} catch(e) {
+			console.error( 'Font compiler not available, please install @reallyspecific/bodykit-fonts' );
+		}
+
+	}
 };
 
 const DONT_WATCH_LIST = [ 'version.php', 'package.json', 'package-lock.json' ];

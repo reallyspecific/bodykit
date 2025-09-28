@@ -173,6 +173,29 @@
   resolved "https://registry.yarnpkg.com/@pkgjs/parseargs/-/parseargs-0.11.0.tgz#a77ea742fab25775145434eb1d2328cf5013ac33"
   integrity sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==
 
+"@reallyspecific/bodykit@^1.3.1":
+  version "1.3.1"
+  resolved "https://registry.yarnpkg.com/@reallyspecific/bodykit/-/bodykit-1.3.1.tgz#eb89247e8dd60ff2544a12f7a1220970212b685c"
+  integrity sha512-KUqXSLBNepBTi50PyemjN6i48jCPSJd5Ek9BXX11xYlyc5ChSoEy3VjiKoslYC2Sbcx3htoHRyyAXM6KVnF3Qg==
+  dependencies:
+    "@node-minify/core" "^9.0.2"
+    "@node-minify/html-minifier" "^9.0.1"
+    "@web-alchemy/fonttools" "^1.3.3"
+    attributes-parser "^2.2.3"
+    browserslist "^4.23.0"
+    esbuild "^0.25.0"
+    express "^4.18.3"
+    lightningcss "^1.30.1"
+    markdown-it "^14.1.0"
+    minimist-string "^1.0.2"
+    php-date "^4.0.1"
+    playwright "^1.44.0"
+    readline "^1.3.0"
+    socket.io "^4.7.5"
+    string-strip-html "^13.4.6"
+    ttfinfo "^0.2.0"
+    ttfmeta "^1.1.2"
+
 "@socket.io/component-emitter@~3.1.0":
   version "3.1.2"
   resolved "https://registry.yarnpkg.com/@socket.io/component-emitter/-/component-emitter-3.1.2.tgz#821f8442f4175d8f0467b9daf26e3a18e2d02af2"
@@ -208,6 +231,13 @@
   version "1.3.3"
   resolved "https://registry.yarnpkg.com/@web-alchemy/fonttools/-/fonttools-1.3.3.tgz#bb7b3214fb5841c94331bfd23e21da75eb2db918"
   integrity sha512-7HTyW7Ux6Af547o7YUFj5fzFqNLdXgxb4isDAd/Zi8HwDeQXKkF6Mt5RKMT0IIxMNuGEDLdQpWWTQQjpVK+ynw==
+  dependencies:
+    pyodide "^0.27.1"
+
+"@web-alchemy/fonttools@^1.3.4":
+  version "1.3.4"
+  resolved "https://registry.yarnpkg.com/@web-alchemy/fonttools/-/fonttools-1.3.4.tgz#3c0ad54828c9f917b188a23672708080542192e0"
+  integrity sha512-nByaeVQ0gG1TJkL97xlxyhK3HoKa3VvRK9IniWLwqEpCpfdiOEWWfJ+eXsgAKP0smDd2c/LAXy6+90XlbkXC8g==
   dependencies:
     pyodide "^0.27.1"
 
@@ -285,6 +315,15 @@ body-parser@1.20.3:
     raw-body "2.5.2"
     type-is "~1.6.18"
     unpipe "1.0.0"
+
+"bodykit-fonts@https://github.com/reallyspecific/bodykit-fonts.git#main":
+  version "1.0.0"
+  resolved "https://github.com/reallyspecific/bodykit-fonts.git#b6e95d248b74a4d2189b42eeb1e42a3e90ceaabd"
+  dependencies:
+    "@reallyspecific/bodykit" "^1.3.1"
+    "@web-alchemy/fonttools" "^1.3.4"
+    string-strip-html "^13.4.6"
+    ttfmeta "^1.1.2"
 
 brace-expansion@^2.0.1:
   version "2.0.2"

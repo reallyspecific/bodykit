@@ -3,7 +3,7 @@ import { makeSlug } from "../../util/formatting.js";
 
 export default async function ( node, tag, compiler ) {
 
-	const type = tag.attrs.name;
+	const type = tag.attrs.name || tag.attrs.path;
 	const template = Template.getTemplate( makeSlug( type ), false );
 	if ( ! template ) {
 		throw SyntaxError( `Could not find template: ${type} at: ${tag.file}:${tag.index}` );
