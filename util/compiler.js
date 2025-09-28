@@ -6,11 +6,13 @@ import {
 	copyFileSync as copyFile,
 	lstatSync as fileStat,
 } from "fs";
+import crypto from "crypto";
 import {URL} from "url";
 import {Minimatch} from "minimatch";
 import { globSync as glob } from "glob";
 import {browserslistToTargets} from "lightningcss";
 import browserslist from "browserslist";
+
 
 import {getSetting} from "./settings.js";
 import {matchPatterns} from "./files.js";
@@ -174,19 +176,25 @@ export default class Compiler {
 				else {
 					console.log(`\x1b[31m${file.filepath}: ${JSON.stringify(error)}\x1b[0m`);
 				}
-				return;
+				return false;
 			}
 
 			if ( file.copy ) {
 				if ( ! fileExists( path.dirname( file.out ) ) ) {
-					mkdir( path.dirname( path.join( file.out ) ), {recursive: true} );
+					mkdir( path.dirname( path.join( file.out ) ), { recursive: true } );
 				}
 				copyFile( file.in, file.out );
+				return null;
 			} else if ( file.contents ) {
 				if ( ! fileExists( path.dirname( file.out ) ) ) {
 					mkdir( path.dirname( file.out ), { recursive: true } );
 				}
 				writeFile( file.out, file.contents, { encoding:'utf8' } );
+				const hash = crypto.createHash('sha1');
+				hash.setEncoding('base64')
+				hash.write(file.contents);
+				hash.end();
+				return hash.read();
 			}
 
 		}
@@ -223,7 +231,9 @@ export default class Compiler {
 					url: this.url( filepath ),
 				} );
 				if ( compiledFiles && props.write ) {
-					compiledFiles.forEach( props.write );
+					for( const file of compiledFiles ) {
+						file.version = await props.write(file);
+					}
 				}
 				( compiledFiles ?? [] ).forEach( file => {
 					out.add( file );
