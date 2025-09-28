@@ -1,0 +1,110 @@
+@import '_reset.css';
+
+html {
+	--font-family-sans: Arial, sans-serif;
+	--font-family-mono: 'Courier New', Courier, monospace;
+	--primary-color: #481761;
+	--primary-dark: #380751;
+	--primary-shadow: #38075120;
+	--hr-color: #38075150;
+	--secondary-color: #f9f4b5;
+	--light-color: #f3f0f5;
+	--light-dark: #e7e0eb;
+	--link-color: var(--primary-color);
+	--background-color: var(--light-dark);
+	--cell-background: var(--light-color);
+	--text-color: var(--primary-dark);
+	--default-font-size: 1.125rem;
+	--default-line-height: 1.6;
+	--default-letter-spacing: -0.35px;
+	--default-word-spacing: -2px;
+	--default-font-weight: 400;
+	--global-shadow: 0 1rem 4rem var(--primary-shadow);
+	--max-content-width: 50rem;
+
+	font-size: 16px;
+}
+
+body {
+	--vw: 1vw;
+	--vh: 1vh;
+	font-family: var(--font-family-sans);
+	font-size: var(--default-font-size);
+	line-height: var(--default-line-height);
+	letter-spacing: var(--default-letter-spacing);
+	word-spacing: var(--default-word-spacing);
+	font-weight: var(--default-font-weight);
+	color: var(--text-color);
+	background-color: var(--background-color);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: calc( var(--vw) * 100 );
+	min-height: calc( var(--vh) * 100 );
+	box-sizing: border-box;
+
+	/* dark mode colors */
+	@media (prefers-color-scheme: dark) {
+		--background-color: var(--primary-color);
+		--cell-background: var(--primary-dark);
+		--text-color: var(--light-color);
+		--link-color: var(--secondary-color);
+		--hr-color: #e7e0eb50;
+	}
+}
+* {
+	font-weight: inherit;
+	font-size: inherit;
+	line-height: inherit;
+	letter-spacing: inherit;
+	word-spacing: inherit;
+	color: inherit;
+	box-sizing: inherit;
+}
+
+code, pre {
+	font-family: var(--font-family-mono);
+}
+
+code {
+	font-size: 0.8em;
+	padding: 0.1em 0.3em;
+	background-color: var(--cell-background);
+	border-radius: 2px;
+	font-weight: 500;
+}
+
+body.is-state-fonts-loaded {
+	--font-family-sans: 'Radio Canada', Arial, sans-serif;
+	--font-family-mono: 'Noto Sans Code', Courier, monospace;
+	--default-letter-spacing: 0;
+	--default-word-spacing: 0;
+}
+
+a {
+	color: var(--link-color);
+	text-decoration: none;
+	transition: outline 0.2s, text-decoration 0.2s;
+	position: relative;
+	&::before {
+		content: '';
+		position: absolute;
+		top: -2px;
+		bottom: -2px;
+		left: 0;
+		right: 0;
+		background-color: transparent;
+		mix-blend-mode: darken;
+		z-index: 0;
+		border-bottom: 2px solid var(--link-color);
+		transition: all 0.3s;
+	}
+	&:hover, &:focus, &:active {
+		color: var(--primary-dark);
+		&::before {
+			background-color: var(--secondary-color);
+			left: -4px;
+			right: -4px;
+		}
+	}
+}
