@@ -1,4 +1,4 @@
-import {globalSettings} from "./util/settings.js";
+import {getSetting} from "./util/settings.js";
 import { Server } from 'socket.io';
 import { createServer } from 'node:http';
 import express from "express";
@@ -17,7 +17,7 @@ export default class Listener {
 
 		this.app = express();
 		this.server = createServer( this.app );
-		this.url = `http://${globalSettings.host}:${globalSettings.port}`;
+		this.url = `http://${getSetting('host')}:${getSetting('port')}`;
 		this.socket = new Server( this.server, {
 			cors: {
 				origin: this.url,
@@ -49,7 +49,7 @@ export default class Listener {
 				resource.set( 'Content-Type', 'text/html' );
 				const response = fileContents.replace( '</head>', `
 					<script>
-						var syncParams = { socketHost: "${this.url}", socket: ${globalSettings.socket} };
+						var syncParams = { socketHost: "${this.url}", socket: ${getSetting('socket')} };
 					</script>
 					<script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>
 					<script src="${this.url}/bodykit.js"></script>
@@ -74,8 +74,8 @@ export default class Listener {
 	start() {
 		this.app.use( '/', this.listener.bind(this) );
 		console.log( 'Server running at ' + this.url );
-		this.server.listen( globalSettings.port );
-		this.socket.listen( globalSettings.socket );
+		this.server.listen( getSetting('port') );
+		this.socket.listen( getSetting('socket') );
 	}
 	stop() {
 		this.server.close();

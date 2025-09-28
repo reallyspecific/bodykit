@@ -66,10 +66,12 @@ yarn watch
 Common flags:
 
 - `--in=<path>`  
-  Input directory to process. Example: `--in=./src`
+  Input directory to process. Allows glob patterns. Example: 
+  `--in=./src`
 
 - `--out=<path>` (optional, default is value of `--in`)  
-  Output directory for built files. Example: `--out=./dist`
+  Output directory for built files. Allows glob patterns. Example: 
+  `--out=./dist`
 
 - `--build=[all|css|js|fonts|md]` (optional, default is `all`)
   Build supported asset types in one pass. This will recurse the 
@@ -79,9 +81,19 @@ Common flags:
   source.
 
 - `--exclude=<pattern>` (optional)
-  Exclude files and directories from processing using glob patterns.
+  Exclude files and directories from processing using glob patterns,
+  comma separated in CLI or an array within a JSON config file.
   Supports multiple patterns when used in configuration. Files matching
-  any exclude pattern will be skipped during compilation.
+  any exclude pattern will be skipped during compilation. Allows glob  
+  patterns, default is `**/node_modules/**`. Can be set within compiler 
+  config options to apply to specific compiler types.
+  Example: `--exclude="temp/**"`
+
+- `--ignore=<pattern>` (optional)
+  Exclude filename patterns from being compiled, comma separated in CLI 
+  or an array within a JSON config file. Can be set within compiler
+  config options to apply to specific compiler types. Default is 
+  `._*,*.map,*.min.*,*~`
   Example: `--exclude="temp/**"`
 
 - --watch  

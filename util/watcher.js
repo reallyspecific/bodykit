@@ -1,25 +1,35 @@
 import path from "path";
-import {globalSettings} from "./settings.js";
+import {getSetting} from "./settings.js";
 import { Minimatch } from "minimatch";
 import fs from "fs";
 import readline from 'readline';
 import Compiler from "./compiler.js";
 
 export default class Watcher {
+	stop() {
+		if ( this.server ) {
+			this.server.stop();
+		}
+		process.exit();
+	}
+
 	constructor( props ) {
 		const { directory, ignore, exclude, watching } = props;
 
-		this.directory = directory ?? globalSettings.sourceIn;
-		this.watching = Compiler.get( watching );
+		this.directory = directory ?? getSetting('sourceIn');
+		this.watching = watching;
 
-		this.excluded = new Set( [ ...exclude ?? [], '**/node_modules/**' ] );
-		this.excluded.forEach( pattern => {
-			pattern = new Minimatch( pattern );
-		} );
-		this.ignored = new Set( [ ...ignore ?? [], '._*', '*.map', '*.min' ] );
-		this.ignored.forEach( pattern => {
-			pattern = new Minimatch( pattern );
-		} );
+		this.excluded = new Set( [ ...exclude ?? [], '**/node_modules/**' ].map(
+			pattern => {
+				return new Minimatch( pattern );
+			} )
+		);
+		this.ignored = new Set( [ ...ignore ?? [], '._*', '*.map', '*.min.*', '*~' ].map(
+			pattern => {
+				return new Minimatch( pattern );
+			} )
+		);
+
 	}
 
 	watch( server ) {
@@ -28,18 +38,24 @@ export default class Watcher {
 			process.stdin.setRawMode( true );
 		}
 		process.stdin.on( 'keypress', ( str, key ) => {
-			if ( key.name === 'q' ) {
-				if ( server ) {
-					server.stop();
-				}
-				process.exit();
+			if ( key.name === 'q' || ( key.name === 'c' && key.ctrl ) ) {
+				this.stop();
 			}
+		} );
+		process.on('SIGINT', () => {
+			this.stop();
+		} );
+		process.on('SIGTERM', () => {
+			this.stop();
+		} );
+		process.on('SIGQUIT', () => {
+			this.stop();
 		} );
 		console.log( 'Press "q" to exit' );
 
 		this.server = server;
 
-		return fs.watch(
+		fs.watch(
 			this.directory,
 			{
 				recursive: true,
@@ -52,14 +68,22 @@ export default class Watcher {
 	async change( event, changedPath ) {
 
 		for( const matcher of this.excluded ) {
-			if ( pattern.match( changedPath ) ) {
+			if ( matcher.match( changedPath ) ) {
+				console.log( `${event}: ${changedPath} [ignored]` );
+				return;
+			}
+		}
+		for( const matcher of this.ignored ) {
+			if ( matcher.match( path.basename( changedPath ) ) ) {
+				console.log( `${event}: ${changedPath} [ignored]` );
 				return;
 			}
 		}
 
 		let reload = false;
-		for ( const compiler of this.watching ) {
+		for ( const compiler of Compiler.get( this.watching ) ) {
 			if ( compiler.match( path.basename( changedPath ), compiler.include ) ) {
+				console.log( `${event}: ${changedPath} [${compiler.constructor.type}]` );
 				try {
 					await compiler.compile();
 				} catch( e ) {

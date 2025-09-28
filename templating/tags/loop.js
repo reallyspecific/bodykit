@@ -14,7 +14,7 @@ export default async function ( tag, node ) {
 		page:  tag.attrs.page || 1,
 	} );
 
-	const template = await Template.new( tag.attrs.template, false );
+	const template = Template.new( tag.attrs.template, false );
 	if ( ! template ) {
 		throw SyntaxError( `Could not find template: ${tag.attrs.template} at: ${tag.file}:${tag.index}` );
 	}

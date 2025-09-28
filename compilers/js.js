@@ -5,6 +5,7 @@ import Compiler from "../util/compiler.js";
 
 export default class JSCompiler extends Compiler {
 
+	static reload = true;
 	static type = 'js';
 
 	include = [ '*.js' ];
@@ -32,7 +33,7 @@ export default class JSCompiler extends Compiler {
 				filename: filename,
 				out: file.path,
 			};
-			this.collection.push( returned );
+			this.collection.add( returned );
 			returnFiles.push( {
 				...returned,
 				contents: file.contents,

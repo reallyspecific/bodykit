@@ -12,7 +12,7 @@ import { globSync as glob } from "glob";
 import {browserslistToTargets} from "lightningcss";
 import browserslist from "browserslist";
 
-import {globalSettings} from "./settings.js";
+import {getSetting} from "./settings.js";
 
 export default class Compiler {
 
@@ -20,15 +20,15 @@ export default class Compiler {
 
 	options = {};
 
-	filenamePattern = globalSettings.filename;
+	filenamePattern = getSetting('filename');
 	include = ['*'];
 
-	sourceIn = globalSettings.sourceIn;
-	destOut = globalSettings.destOut;
-	ignore = globalSettings.ignore ?? [];
-	exclude = globalSettings.exclude ?? [];
+	sourceIn = getSetting('sourceIn');
+	destOut = getSetting('destOut');
+	ignore = getSetting('ignore') ?? [];
+	exclude = getSetting('exclude') ?? [];
 
-	targets = browserslistToTargets( browserslist( globalSettings.targets ?? 'last 2 versions' ) );
+	targets = browserslistToTargets( browserslist( getSetting('targets') ?? 'last 2 versions' ) );
 
 	collection = new Set();
 	props = {};
@@ -52,12 +52,6 @@ export default class Compiler {
 		if ( props ) {
 			this.props = { ...this.props, ...props };
 		}
-
-		[ this.include, this.ignore, this.exclude ].forEach( matchers => {
-			matchers.forEach( pattern => {
-				pattern = new Minimatch( pattern );
-			} );
-		});
 	}
 
 	static registeredCompilers = new Map();
@@ -87,7 +81,7 @@ export default class Compiler {
 		if ( relPath ) {
 			absPath = path.join( absPath, relPath );
 		}
-		return glob( path.join( absPath, '**/' + this.include ), { withFileTypes: true } );
+		return glob( path.join( absPath, '**/' + this.include ), { recursive:true, withFileTypes: true } );
 	}
 
 	out( path, basename, ext ) {
@@ -99,28 +93,28 @@ export default class Compiler {
 		if ( typeof this.filenamePattern === 'function' ) {
 			outputPath = this.filenamePattern( { path, basename, ext, tree: pathParts } );
 		}
+		outputPath = outputPath.replaceAll( '[path]', path ?? '' );
 		if ( pathParts.length ) {
-			outputPath = outputPath.replaceAll('[path]', path);
-			outputPath = outputPath.replaceAll('[path:last]', globalSettings.rootUrl );
+			outputPath = outputPath.replaceAll('[path:last]', getSetting('rootUrl') );
 			for ( const partIndex in pathParts ) {
 				outputPath.replaceAll(`[path:${partIndex}]`, pathParts[partIndex] );
 			}
 		}
 		outputPath = outputPath.replaceAll( '[name]', basename );
-		outputPath = outputPath.replaceAll( '[ext]', ext );
+		outputPath = outputPath.replaceAll( '[ext]', ext.substring(1) );
 		return outputPath;
 	}
 
 	url( path ) {
-		const url = new URL( globalSettings.rootUrl );
+		const url = new URL( getSetting('rootUrl') );
 		url.pathname += path;
 		return url;
 	}
 
 	async compile() {
-
-		return this.recurseDirectory( {
-			in: this.sourceIn,
+		this.collection = new Set();
+		return this.walkDirectory( {
+			in: './',
 			build: this.build.bind(this),
 			write: this.write.bind(this),
 		} );
@@ -163,26 +157,22 @@ export default class Compiler {
 
 	}
 
-	async recurseDirectory( props ) {
+	async walkDirectory( props ) {
 
 		const files = this.find( props.in ?? null );
 
 		const out = new Set();
 		for (const file of files) {
-			if ( file.isDirectory() || ! this.match( file.name, this.include ) ) {
+			if ( file.isDirectory() || ! this.match( file.name, this.include ) || this.match( file.name, this.ignore ) ) {
 				continue;
 			}
 			let filepath = path.relative( this.sourceIn, file.fullpath() );
 			if ( this.match( filepath, this.exclude ) ) {
 				continue;
 			}
+
 			const ext = path.extname( file.name );
 			const basename = path.basename( file.name, ext );
-
-			if ( this.match( basename, this.ignore ) ) {
-				continue;
-			}
-
 			const outpath = this.out( path.dirname( filepath ), basename, ext );
 
 			try {
@@ -214,7 +204,10 @@ export default class Compiler {
 
 	match( filePath, matchers = null, matchAny = true ) {
 		if ( Array.isArray( matchers ) ) {
-			for( const matcher of matchers ) {
+			for( let matcher of matchers ) {
+				if ( ! ( matcher instanceof Minimatch ) ) {
+					matcher = new Minimatch( matcher );
+				}
 				if ( matchAny && matcher.match( filePath ) ) {
 					return true;
 				}

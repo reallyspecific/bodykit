@@ -5,7 +5,7 @@ import {
 	readdirSync as readDir,
 } from "fs";
 import parseAttrs from "attributes-parser";
-import {globalSettings} from "../util/settings.js";
+import {getSetting} from "../util/settings.js";
 import tagProcessors from './tags.js';
 import {makeSlug,getVar} from "../util/formatting.js";
 
@@ -25,7 +25,7 @@ export default class Template {
 
 	static collectTemplates() {
 		Template.templates = {};
-		const templatePath = globalSettings.sourceIn;
+		const templatePath = getSetting('sourceIn');
 		const files = readDir( templatePath, { encoding: 'utf-8', recursive: true } );
 		files.forEach( file => {
 			if ( file.endsWith( '.html' ) ) {
@@ -56,14 +56,14 @@ export default class Template {
 	}
 
 	static getTemplateContents( relPath ) {
-		const templatePath = path.join( globalSettings.sourceIn, relPath );
+		const templatePath = path.join( getSetting('sourceIn'), relPath );
 		if ( ! fileExists( templatePath ) ) {
 			return false;
 		}
 		return readFile( templatePath, { encoding: 'utf-8' } );
 	}
 
-	static async new( slug, useDefault = true ) {
+	static new( slug, useDefault = true ) {
 
 		if ( ! Template.templates ) {
 			Template.collectTemplates();
@@ -73,7 +73,8 @@ export default class Template {
 			throw ReferenceError( `Could not retrieve [${slug}] template` );
 		}
 
-		return new Template( { templateContents: template.contents, slug } );
+		const newTemplate = new Template( { templateContents: template.contents, slug } );
+		return newTemplate;
 
 	}
 

@@ -1,6 +1,9 @@
 {
   "build": "all",
   "exclude": "**/exclude/*",
+  "replace": true,
+  "in": "test-assets/in",
+  "out": "test-assets/out",
   "js": {
     "exclude": "assets/js/excluded/*"
   },
