@@ -101,7 +101,7 @@ export async function css( sourceIn, destOut, targetBrowsers ) {
 
 }
 
-export async function js( sourceIn, destOut ) {
+export async function js( sourceIn, destOut, targetBrowsers ) {
 
 	return recurseDirectoryForCompile( {
 		sourceIn,
@@ -136,12 +136,12 @@ export async function js( sourceIn, destOut ) {
 
 };
 
-export function all( sourceIn, destOut ) {
+export function all( sourceIn, destOut, targetBrowsers ) {
 
 	const promises = [];
 
-	promises.push( css( sourceIn, destOut ) );
-	promises.push( js( sourceIn, destOut ) );
+	promises.push( css( sourceIn, destOut, targetBrowsers ) );
+	promises.push( js( sourceIn, destOut, targetBrowsers ) );
 
 	util.bumpVersion( destOut );
 
