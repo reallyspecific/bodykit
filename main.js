@@ -1,11 +1,10 @@
 import path from 'path';
 import fs from 'fs';
-import express from 'express';
 import readline from 'readline';
 
 import compile from './compile.js';
 import setupServer from './sync.js';
-import { parseSettings, updateGlobalSetting, bumpVersion } from './util.js';
+import { parseSettings, bumpVersion } from './util.js';
 
 const runSettings = parseSettings( process.cwd() );
 

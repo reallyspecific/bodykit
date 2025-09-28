@@ -112,6 +112,20 @@ export function bumpVersion( destOut ) {
 	const versionFile = path.join( destOut, 'version.php' );
 	const versionCode = `<?php\nreturn '1.0.${Date.now()}';\n`;
 
+	if ( fs.existsSync( path.join( destOut, 'package.json' ) ) ) {
+		const packageJson = JSON.parse( fs.readFileSync( path.join( destOut, 'package.json' ) ) );
+		if ( packageJson.version ) {
+			const version = packageJson.version.split( '.' );
+			if ( version.length > 2 ) {
+				version[ version.length - 1 ] = Date.now();
+			} else {
+				version.push( Date.now() );
+			}
+			packageJson.version = version.join( '.' );
+		}
+		fs.writeFileSync( path.join( destOut, 'package.json' ), JSON.stringify( packageJson, null, 2 ) );
+	}
+
 	fs.writeFileSync( versionFile, versionCode );
 
 }

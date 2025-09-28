@@ -18,7 +18,7 @@ export function css( sourceIn, destOut ) {
 
 		try {
 
-			if ( fs.existsSync( outputPath ) ) {
+			if ( fs.existsSync( outputPath ) && sourcePath !== outputPath ) {
 				fs.rmSync( outputPath, { recursive: true } );
 			}
 			fs.mkdirSync( outputPath );
@@ -66,7 +66,7 @@ export function js( sourceIn, destOut ) {
 
 			const promises = [];
 
-			if ( fs.existsSync( outputPath ) ) {
+			if ( fs.existsSync( outputPath ) && sourcePath !== outputPath ) {
 				fs.rmSync( outputPath, { recursive: true } );
 			}
 			fs.mkdirSync( outputPath );
@@ -78,6 +78,10 @@ export function js( sourceIn, destOut ) {
 				}
 
 				if ( path.extname( file ) !== '.js' ) {
+					return;
+				}
+
+				if ( path.basename( file ).endsWith( '.min' ) ) {
 					return;
 				}
 
