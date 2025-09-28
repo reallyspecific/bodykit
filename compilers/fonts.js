@@ -3,7 +3,6 @@ import { readFileSync as readFile } from "fs";
 import { subset } from '@web-alchemy/fonttools';
 import {stripHtml} from "string-strip-html";
 import {ttfInfo} from 'ttfmeta';
-import { cssnano } from "@node-minify/cssnano";
 
 import {Compiler} from "../util/compiler.js";
 import {globalSettings} from "../util/settings.js";
@@ -69,7 +68,7 @@ export default class FontCompiler extends Compiler {
 					if (err) {
 						return;
 					}
-					fontName = result.meta.property.find(property => property.name === 'name')?.text.replaceAll(/[^A-Za-z0-9-_]/g, '') ?? fontFileName;
+					fontName = result.meta.property.find(property => property.name === 'name' || property.name === 'font-family')?.text.replaceAll(/[^A-Za-z0-9-_]/g, '') ?? fontFileName;
 					fontStyle = result.meta.property.find(property => property.name === 'font-subfamily')?.text.replaceAll(/[^A-Za-z0-9-_]/g, '').toLowerCase() ?? 'normal';
 					if (fontStyle === 'regular') {
 						fontStyle = 'normal';
