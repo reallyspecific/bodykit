@@ -52,7 +52,7 @@ const build = async ( what ) => {
 	}
 	if ( what.includes('fonts') ) {
 		try {
-			const { FontCompiler } = await import("bodykit-fonts");
+			const { default: FontCompiler } = await import("@reallyspecific/bodykit-fonts");
 
 			compilers['fonts'] = new FontCompiler({
 				sourceIn: runSettings.sourceIn,
