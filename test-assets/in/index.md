@@ -1,5 +1,5 @@
 type: home
-
+title: test index
 ----
 
 # Test index

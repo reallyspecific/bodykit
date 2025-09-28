@@ -17,6 +17,9 @@ export default class Listener {
 				origin: this.url,
 			}
 		} );
+		this.socket.on( 'connection', ( socket ) => {
+			console.log( 'Socket connected, watching for changes.' );
+		})
 	}
 
 	listener( request, resource ) {
@@ -26,7 +29,7 @@ export default class Listener {
 		const requestUrl = new URL( request.url, this.url );
 		let filePath = path.join( this.serverRoot, requestUrl.pathname );
 
-		if ( request.pathname === '/bodykit.js' ) {
+		if ( requestUrl.pathname === '/bodykit.js' ) {
 			resource.set( 'Content-Type', 'application/javascript' );
 
 			return resource.sendFile( globalSettings.cwd + '/sync-listener.js');
@@ -40,7 +43,7 @@ export default class Listener {
 				resource.set( 'Content-Type', 'text/html' );
 				const response = fileContents.replace( '</head>', `
 					<script>
-						var syncParams = { socketHost: this.url, socket: ${globalSettings.socket} };
+						var syncParams = { socketHost: "${this.url}", socket: ${globalSettings.socket} };
 					</script>
 					<script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>
 					<script src="${this.url}/bodykit.js"></script>
