@@ -1,0 +1,7 @@
+{
+  "build": ["scss"],
+  "plugins": ["scss"],
+  "in": "./test-assets/in",
+  "out": "./test-assets/out",
+  "clean": false
+}
