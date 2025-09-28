@@ -70,7 +70,9 @@ if ( runSettings.watch ) {
 			return;
 		} else if ( basename.endsWith('.min') ) {
 			return;
-		} else if ( extension === '.css' ) {
+		} else if ( extension.endsWith('~') ) {
+			return;
+		}else if ( extension === '.css' ) {
 			what = 'css';
 		} else if ( extension === '.js' ) {
 			what = 'js';
@@ -88,6 +90,7 @@ if ( runSettings.watch ) {
 			}
 		} ).catch( error => {
 			console.error( `${changedPath} ${event} event, error: ${error}` );
+			console.error( error.stack );
 		} );
 	};
 
