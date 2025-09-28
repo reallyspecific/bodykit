@@ -1,11 +1,11 @@
 {
-  "name": "bodykit",
-  "version": "1.0.1",
+  "name": "rs-bodykit",
+  "version": "1.0.1.1",
   "main": "main.js",
   "license": "MIT",
   "type": "module",
   "bin": {
-    "bodykit": "./main.js"
+    "rs-bodykit": "./main.js"
   },
   "scripts": {
     "test:separate-dirs": "node main.js --build=all --in=test-assets/in --out=test-assets/out",
