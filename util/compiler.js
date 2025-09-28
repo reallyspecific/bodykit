@@ -3,62 +3,131 @@ import {
 	existsSync as fileExists,
 	mkdirSync as mkdir,
 	writeFileSync as writeFile,
-	readdirSync as readDir,
-	rmSync as rm,
 	copyFileSync as copyFile,
 	lstatSync as fileStat,
 } from "fs";
-import { Minimatch } from "minimatch";
+import {URL} from "url";
+import {Minimatch} from "minimatch";
+import { globSync as glob } from "glob";
+import {browserslistToTargets} from "lightningcss";
+import browserslist from "browserslist";
+
 import {globalSettings} from "./settings.js";
 
-export class Compiler {
+export default class Compiler {
 
-	fileExtension = '';
-	allowedExtensions = [];
-	buildOptions = {};
+	static type = 'default';
+
+	options = {};
+
+	filenamePattern = globalSettings.filename;
+	include = ['*'];
+
 	sourceIn = globalSettings.sourceIn;
 	destOut = globalSettings.destOut;
-	collection = [];
+	ignore = globalSettings.ignore ?? [];
+	exclude = globalSettings.exclude ?? [];
 
-	constructor(props) {
-		const {sourceIn, destOut, buildOptions} = props;
-		sourceIn && (this.sourceIn = sourceIn);
-		destOut && (this.destOut = destOut);
-		this.buildOptions = buildOptions;
-		this.collection = [];
-		this.excludedFolders = globalSettings?.exclude ?? [];
-		if ( buildOptions?.exclude ?? null ) {
-			if ( typeof buildOptions.exclude === 'string' ) {
-				this.excludedFolders.push( buildOptions.exclude );
-			} else if ( Array.isArray( buildOptions.exclude ) ) {
-				this.excludedFolders = this.excludedFolders.concat( buildOptions.exclude );
+	targets = browserslistToTargets( browserslist( globalSettings.targets ?? 'last 2 versions' ) );
+
+	collection = new Set();
+	props = {};
+
+	constructor( buildOptions, props ) {
+		if ( buildOptions ) {
+			for( const key in buildOptions ) {
+				if ( this.hasOwnProperty(key) ) {
+					if ( Array.isArray( this[key] ) && ! Array.isArray( buildOptions[key] ) ) {
+						this[key].push( buildOptions[key] );
+					} else if ( Array.isArray( this[key] ) && Array.isArray( buildOptions[key] ) ) {
+						this[key].concat( buildOptions[key] );
+					} else {
+						this[key] = buildOptions[key];
+					}
+					delete buildOptions[key];
+				}
 			}
-			delete this.buildOptions.exclude;
+			this.options = buildOptions;
 		}
-		this.minimatched = [];
-		this.excludedFolders.forEach( match => {
-			this.minimatched.push( new Minimatch(match) );
-		} );
+		if ( props ) {
+			this.props = { ...this.props, ...props };
+		}
+
+		[ this.include, this.ignore, this.exclude ].forEach( matchers => {
+			matchers.forEach( pattern => {
+				pattern = new Minimatch( pattern );
+			} );
+		});
 	}
 
-	async build(props) {
+	static registeredCompilers = new Map();
+
+	static register( compilerClass, props ) {
+		Compiler.registeredCompilers.set( compilerClass.type, new compilerClass(props) );
+	}
+
+	static get( which = 'all' ) {
+		if ( which === 'all' ) {
+			return Compiler.registeredCompilers.values();
+		}
+		if ( Array.isArray( which ) ) {
+			return Compiler.registeredCompilers.values()
+				.filter( compiler => which.includes( compiler.type ) )
+
+		}
+		return Compiler.registeredCompilers.get( which );
+	}
+
+	async build() {
 		return false;
 	}
 
-	async compile(props = {}) {
+	find( relPath = null ) {
+		let absPath = this.sourceIn;
+		if ( relPath ) {
+			absPath = path.join( absPath, relPath );
+		}
+		return glob( path.join( absPath, '**/' + this.include ), { withFileTypes: true } );
+	}
 
-		return this.recurseDirectory({
-			sourceIn: this.sourceIn,
-			destOut: this.destOut,
-			buildOptions: this.buildOptions,
-			allowedExtensions: this.allowedExtensions,
-			buildCallback: this.build.bind(this),
-			writeCallback: this.write.bind(this),
-		});
+	out( path, basename, ext ) {
+		let pathParts = path ? path.split( path.sep ) : [];
+		while ( pathParts.length && ( pathParts[0] === '.' || pathParts[0] === '..' || pathParts[0] === '' ) ) {
+			pathParts.shift();
+		}
+		let outputPath = this.filenamePattern;
+		if ( typeof this.filenamePattern === 'function' ) {
+			outputPath = this.filenamePattern( { path, basename, ext, tree: pathParts } );
+		}
+		if ( pathParts.length ) {
+			outputPath = outputPath.replaceAll('[path]', path);
+			outputPath = outputPath.replaceAll('[path:last]', globalSettings.rootUrl );
+			for ( const partIndex in pathParts ) {
+				outputPath.replaceAll(`[path:${partIndex}]`, pathParts[partIndex] );
+			}
+		}
+		outputPath = outputPath.replaceAll( '[name]', basename );
+		outputPath = outputPath.replaceAll( '[ext]', ext );
+		return outputPath;
+	}
+
+	url( path ) {
+		const url = new URL( globalSettings.rootUrl );
+		url.pathname += path;
+		return url;
+	}
+
+	async compile() {
+
+		return this.recurseDirectory( {
+			in: this.sourceIn,
+			build: this.build.bind(this),
+			write: this.write.bind(this),
+		} );
 
 	}
 
-	async write(compiled, outputPath) {
+	async write( compiled ) {
 
 		if ( ! Array.isArray( compiled ) ) {
 			compiled = [compiled];
@@ -66,8 +135,8 @@ export class Compiler {
 
 		for ( const file of compiled ) {
 
-			if (file.error) {
-				switch (file.error.type) {
+			if ( file.error ) {
+				switch ( file.error.type ) {
 					case 'ParserError':
 					case 'SyntaxError':
 						console.log(`\x1b[31m${file.fileName}: ${file.error.message}\r\n    in ${file.error.path} (${file.error.line}:${file.error.column})\x1b[0m`);
@@ -78,101 +147,84 @@ export class Compiler {
 				return;
 			}
 
-			if (file.copy) {
-				if (!fileExists(path.dirname(file.destPath))) {
-					mkdir(path.dirname(path.join(file.destPath), {recursive: true}));
+			if ( file.copy ) {
+				if ( ! fileExists( path.dirname( file.out ) ) ) {
+					mkdir( path.dirname( path.join( file.out ) ), {recursive: true} );
 				}
-				copyFile( file.filePath, file.destPath );
-			} else {
-				if (!fileExists(path.dirname(path.join(outputPath,file.filename)))) {
-					mkdir(path.dirname(path.join(outputPath,file.filename)), {recursive: true});
+				copyFile( file.in, file.out );
+			} else if ( file.contents ) {
+				if ( ! fileExists( path.dirname( file.out ) ) ) {
+					mkdir( path.dirname( file.out ), { recursive: true } );
 				}
-				writeFile(path.join(outputPath, file.filename), file.contents, { encoding:'utf8' });
+				writeFile( file.out, file.contents, { encoding:'utf8' } );
 			}
 
 		}
 
 	}
 
-	async recurseDirectory(props) {
+	async recurseDirectory( props ) {
 
-		const relPath    = props.subfolder ?? ''
-		const sourcePath = path.join(props.sourceIn, relPath);
-		const outputPath = path.join(props.destOut, relPath);
+		const files = this.find( props.in ?? null );
 
-		const exists = fileExists(sourcePath);
-		if ( ! exists ) {
-			return [];
-		}
-
-		const files = readDir(sourcePath);
-
+		const out = new Set();
 		for (const file of files) {
+			if ( file.isDirectory() || ! this.match( file.name, this.include ) ) {
+				continue;
+			}
+			let filepath = path.relative( this.sourceIn, file.fullpath() );
+			if ( this.match( filepath, this.exclude ) ) {
+				continue;
+			}
+			const ext = path.extname( file.name );
+			const basename = path.basename( file.name, ext );
 
-			if (['.', '~'].includes(file.substring(0, 1))) {
-				continue;
-			}
-			if (['~'].includes(file.substring(file.length - 1))) {
-				continue;
-			}
-			let relFile = path.join(relPath, file);
-			if ( this.matchExcludedPath( relFile ) ) {
+			if ( this.match( basename, this.ignore ) ) {
 				continue;
 			}
 
-			const currentPath = path.join(sourcePath, file);
-			const fileStats = fileStat(currentPath);
-			if (fileStats.isDirectory()) {
-				await this.recurseDirectory({
-					...props,
-					destPath: outputPath,
-					subfolder: path.join(relPath, file),
-				});
-				continue;
-			}
-			if (file.startsWith('_')) {
-				continue;
-			}
-			if (path.basename(file, path.extname(file)).endsWith('.min')) {
-				continue;
-			}
-			if (props.allowedExtensions && !props.allowedExtensions.includes(path.extname(file))) {
-				continue;
-			}
-			if ( this.matchExcludedPath( relFile ) ) {
-				continue;
-			}
+			const outpath = this.out( path.dirname( filepath ), basename, ext );
 
 			try {
-				const compiledFiles = await props.buildCallback({
-					filePath: path.join(sourcePath, file),
-					fileName: file,
-					outputUrl: path.join(props.subfolder ?? '', path.basename(file)),
-					outputPath,
-					buildOptions: props.buildOptions,
-				});
-				if (compiledFiles) {
-					compiledFiles.forEach(compiled => props.writeCallback(compiled, outputPath));
+				const compiledFiles = await props.build( {
+					in: file.fullpath(),
+					out: path.join( this.destOut, outpath ),
+					stat: fileStat( file.fullpath() ),
+					filename: file.name,
+					filepath,
+					basename,
+					ext,
+					url: this.url( filepath ),
+				} );
+				if ( compiledFiles && props.write ) {
+					compiledFiles.forEach( props.write );
 				}
+				( compiledFiles ?? [] ).forEach( file => {
+					out.add( file );
+				} );
 			} catch( error ) {
 				// todo: do something with this
 				throw error;
 			}
 
-
-
 		}
+		return out;
 
 	}
 
-	matchExcludedPath( matchPath ) {
-		let fail = false;
-		for( const minimatch of this.minimatched ) {
-			if ( minimatch.match( matchPath ) ) {
-				return true;
+	match( filePath, matchers = null, matchAny = true ) {
+		if ( Array.isArray( matchers ) ) {
+			for( const matcher of matchers ) {
+				if ( matchAny && matcher.match( filePath ) ) {
+					return true;
+				}
+				if ( ! matchAny && ! matcher.match( filePath ) ) {
+					return false;
+				}
 			}
+			return ! matchAny;
 		}
-		return false
+		return matchers.match( filePath );
 	}
 
 }

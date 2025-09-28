@@ -1,44 +1,40 @@
 import path from "path";
 import esbuild from "esbuild";
 
-import {Compiler} from "../util/compiler.js";
+import Compiler from "../util/compiler.js";
 
 export default class JSCompiler extends Compiler {
 
-	allowedExtensions = [ '.js' ];
+	static type = 'js';
 
-	async build({ filePath, outputPath, buildOptions } ) {
+	include = [ '*.js' ];
+	filename = '[path]/[name].min.js';
+
+	async build( props ) {
 
 		const build = await esbuild.build( {
 			bundle: true,
-			entryPoints: [ filePath ],
+			entryPoints: [ props.in ],
 			minify: true,
 			sourcemap: true,
 			write: false,
-			outdir: outputPath,
+			outdir: path.dirname( props.out ),
 			outExtension: { '.js': '.min.js' },
-			...buildOptions || []
+			...this.options
 		} );
 
 		const returnFiles = [];
 
 		build.outputFiles.forEach( file => {
-			const jsFileName = path.basename( file.path );
-
-			const relPath = path.relative( this.sourceIn, path.dirname( filePath ) );
-
-			this.collection.push( {
-				destPath: path.join( this.destOut, relPath, jsFileName ),
-				relPath: path.join( relPath, jsFileName ),
-				filePath: filePath,
-				filename: jsFileName,
-			} );
-
+			const filename = path.basename( file.path );
+			const returned = {
+				...props,
+				filename: filename,
+				out: file.path,
+			};
+			this.collection.push( returned );
 			returnFiles.push( {
-				destPath: path.join( this.destOut, relPath, jsFileName ),
-				filePath: filePath,
-				relPath: path.join( relPath, jsFileName ),
-				filename: jsFileName,
+				...returned,
 				contents: file.contents,
 			} );
 		} );

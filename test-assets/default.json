@@ -1,0 +1,10 @@
+{
+  "build": "all",
+  "exclude": "**/exclude/*",
+  "js": {
+    "exclude": "assets/js/excluded/*"
+  },
+  "md": {
+    "exclude": "**/*.ttf"
+  }
+}

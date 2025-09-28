@@ -1,0 +1,9 @@
+{
+  "build": "fonts",
+  "in": "test-assets/in",
+  "out": "test-assets/in",
+  "replace": false,
+  "build": {
+    "embedded": "assets/css/fonts.css"
+  }
+}

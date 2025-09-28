@@ -77,7 +77,7 @@ export default class Template {
 
 	}
 
-	async render( node, compiler = null ) {
+	async render( node, props = {} ) {
 
 		let renderedContents = this.templateContents + '';
 
@@ -88,7 +88,7 @@ export default class Template {
 		while( ( tag = tagMatch.exec( renderedContents ) ) !== null ) {
 			matches.push( {
 				index: tag.index,
-				file: path.relative( globalSettings.destOut, node.filePath ),
+				file: props.out,
 				replaces: tag[0],
 				tag: tag[1],
 				attrs: parseAttrs( tag[2] ),
@@ -114,26 +114,26 @@ export default class Template {
 
 		for ( const tagMatch of matches ) {
 
-			const renderedTag = await this.processTag( tagMatch, node, compiler );
+			const renderedTag = await this.processTag( tagMatch, node, props );
 
 			renderedContents = renderedContents.replace( tagMatch.replaces, renderedTag );
 
 		}
 
-		renderedContents = this.processShortTags( renderedContents, node, compiler );
+		renderedContents = this.processShortTags( renderedContents, node, props );
 
 		return renderedContents;
 
 	}
 
-	async processTag( tag, node, compiler = null ) {
+	async processTag( tag, node, props ) {
 
 		try {
 			const processor = tagProcessors[tag.tag] ?? false;
 			if ( ! processor ) {
 				throw SyntaxError( `Unknown tag: ${tag.tag}` );
 			}
-			const replacement = await processor( node, tag, compiler, this );
+			const replacement = await processor( tag, node, props, this );
 			if ( typeof replacement === 'string' ) {
 				return replacement;
 			}

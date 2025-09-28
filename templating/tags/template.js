@@ -1,7 +1,7 @@
 import Template from "../templating.js";
 import { makeSlug } from "../../util/formatting.js";
 
-export default async function ( node, tag, compiler ) {
+export default async function ( tag, node, props ) {
 
 	const type = tag.attrs.name || tag.attrs.path;
 	const template = Template.getTemplate( makeSlug( type ), false );
@@ -9,7 +9,7 @@ export default async function ( node, tag, compiler ) {
 		throw SyntaxError( `Could not find template: ${type} at: ${tag.file}:${tag.index}` );
 	}
 	const templater = new Template( { templateContents: template.contents, type } );
-	const rendered = await templater.render( node, compiler );
+	const rendered = await templater.render( node, props );
 	return rendered;
 
 };
