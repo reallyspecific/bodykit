@@ -120,6 +120,7 @@ async function main() {
 				break;
 			case 'fonts':
 			case 'scss':
+            case 'react':
 				let modulePath = `@reallyspecific/bodykit-${compiler}`;
 				if ( fileExists( path.join( __dirname, `_modules/${compiler}/main.js` ) ) ) {
 					modulePath = path.join( __dirname, `_modules/${compiler}/main.js` );

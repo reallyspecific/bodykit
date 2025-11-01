@@ -85,7 +85,7 @@ export default class Watcher {
 			if ( compiler.match( path.basename( changedPath ), compiler.include ) ) {
 				console.log( `${event}: ${changedPath} [${compiler.constructor.type}]` );
 				try {
-					await compiler.compile();
+					await compiler.compile( { continuous: true } );
 				} catch( e ) {
 					console.error( `${changedPath} error: `, e );
 				}

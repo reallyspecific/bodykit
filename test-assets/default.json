@@ -7,6 +7,6 @@
   "out": "test-assets/out",
   "filename": "[path:0]/path/[name].[ext]",
   "js": {
-    "exclude": "**/excluded/**"
+    "exclude": "**/excluded/**,assets/app/**"
   }
 }

@@ -145,7 +145,7 @@ export default class Compiler {
 		return url;
 	}
 
-	async compile() {
+	async compile( props ) {
 
 		this.collection = new Set();
 		return this.walkDirectory( {
@@ -153,6 +153,7 @@ export default class Compiler {
 			in: '',
 			build: this.build.bind(this),
 			write: this.write.bind(this),
+			...props
 		} );
 
 	}
@@ -231,6 +232,7 @@ export default class Compiler {
 					basename,
 					ext,
 					url: this.url( filepath ),
+					continuous: props.continuous ?? false,
 				} );
 				if ( compiledFiles && props.write ) {
 					for( const file of compiledFiles ) {

@@ -1,0 +1,10 @@
+{
+  "build": ["react"],
+  "plugins": ["react"],
+  "in": "./test-assets/in/assets/app",
+  "out": "./test-assets/out/assets/app",
+  "clean": false,
+  "react": {
+
+  }
+}

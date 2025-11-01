@@ -137,4 +137,4 @@ test-assets/out
 test-assets/in/**/*.min.*
 
 _modules
-
+.DS_Store
