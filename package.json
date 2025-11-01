@@ -16,7 +16,6 @@
     "test:clean": "node main.js --config='./test-assets/clean-test.json'",
     "test:fonts": "node main.js --config='./test-assets/fonts.json'",
     "test:scss": "node main.js --config='./test-assets/scss.json'",
-    "test:react": "node main.js --config='./test-assets/react.json'",
     "test:watch": "node main.js --watch --config='./test-assets/default.json'",
     "test:server": "node main.js --watch --serve='./test-assets/out' --config='./test-assets/default.json'"
   },
